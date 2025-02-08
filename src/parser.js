@@ -1,25 +1,22 @@
 const Subject = require('rxjs').Subject;
 const { v4: uuidv4 } = require('uuid');
 
-
 class StepToJsonParser {
-
     constructor(file) {
         this.file = file;
         this.preprocessedFile = {
             header: {
                 fileDescription: '',
                 fileName: '',
-                fileSchema: '',
+                fileSchema: ''
             },
             data: {
                 productDefinitions: [],
-                nextAssemblyUsageOccurences: [],
-            },
+                nextAssemblyUsageOccurences: []
+            }
         };
         this.preprocessFile();
     }
-
 
     /**
      * Parses a STEP file and outputs its contents as a JSON tree
@@ -28,12 +25,13 @@ class StepToJsonParser {
      */
     parse(visitorFunction = undefined, sub = new Subject()) {
         this.parseProductDefinitions(this.preprocessedFile.data.productDefinitions);
-        this.parseNextAssemblyUsageOccurences(this.preprocessedFile.data.nextAssemblyUsageOccurences);
+        this.parseNextAssemblyUsageOccurences(
+            this.preprocessedFile.data.nextAssemblyUsageOccurences
+        );
         const rootAssembly = this.identifyRootAssembly();
         const result = this.buildStructureObject(rootAssembly, sub, visitorFunction);
         return result;
     }
-
 
     /**
      * Parses a STEP file and outputs its contents as a JSON tree. Adds a UUID for every product occurrence
@@ -42,7 +40,6 @@ class StepToJsonParser {
     parseWithUuid(sub = new Subject()) {
         return this.parse(StepToJsonParser.uuidVisitor, sub);
     }
-
 
     /**
      * Splits the STEP-file into single lines and stores all lines that contain product definitions and assembly relations
@@ -56,22 +53,35 @@ class StepToJsonParser {
         }
 
         lines.forEach((line) => {
+            line = StepToJsonParser.removeLinebreaks(line);
+
             if (line.includes('FILE_NAME')) {
-                this.preprocessedFile.header.fileName = StepToJsonParser.removeLinebreaks(line);
-            } else if (line.includes('FILE_SCHEMA')) {
-                this.preprocessedFile.header.fileSchema = StepToJsonParser.removeLinebreaks(line);
-            } else if (line.includes('FILE_DESCRIPTION')) {
-                this.preprocessedFile.header.fileDescription = StepToJsonParser.removeLinebreaks(line);
-            } else if (line.includes('PRODUCT_DEFINITION(')) {
-                this.preprocessedFile.data.productDefinitions.push(StepToJsonParser.removeLinebreaks(line));
-            } else if (line.includes('NEXT_ASSEMBLY_USAGE_OCCURRENCE(')) {
-                this.preprocessedFile.data.nextAssemblyUsageOccurences.push(StepToJsonParser.removeLinebreaks(line));
+                this.preprocessedFile.header.fileName = line;
+                return;
+            }
+
+            if (line.includes('FILE_SCHEMA')) {
+                this.preprocessedFile.header.fileSchema = line;
+                return;
+            }
+
+            if (line.includes('FILE_DESCRIPTION')) {
+                this.preprocessedFile.header.fileDescription = line;
+                return;
+            }
+
+            if (line.includes('PRODUCT_DEFINITION(')) {
+                this.preprocessedFile.data.productDefinitions.push(line);
+                return;
+            }
+
+            if (line.includes('NEXT_ASSEMBLY_USAGE_OCCURRENCE(')) {
+                this.preprocessedFile.data.nextAssemblyUsageOccurences.push(line);
+                return;
             }
         });
-
         return this.preprocessedFile;
     }
-
 
     /**
      * Parses the lines of the next assembly usage occurrence and extracts id of relation, container id, contained id and contained name
@@ -97,7 +107,7 @@ class StepToJsonParser {
             const assemblyObject = {
                 id: newId,
                 container: container,
-                contains: contained,
+                contains: contained
             };
             assemblyRelations.push(assemblyObject);
         });
@@ -105,7 +115,6 @@ class StepToJsonParser {
         this.relations = assemblyRelations;
         return assemblyRelations;
     }
-
 
     /**
      * Parses the lines of the product definition and extracts id and name
@@ -130,16 +139,14 @@ class StepToJsonParser {
 
             const productObject = {
                 id: newId,
-                name: fixedName,
+                name: fixedName
             };
             products.push(productObject);
-
         });
         subject.complete();
         this.products = products;
         return products;
     }
-
 
     /**
      * Identifies the root component that contains all other components
@@ -153,10 +160,14 @@ class StepToJsonParser {
             let rootComponent;
             this.products.forEach((product) => {
                 // Look for a relation where product is the container
-                const productIsContainer = this.relations.some((relation) => relation.container === product.id);
+                const productIsContainer = this.relations.some(
+                    (relation) => relation.container === product.id
+                );
 
                 // Look for a relation where product is contained
-                const productIsContained = this.relations.some((relation) => relation.contains === product.id);
+                const productIsContained = this.relations.some(
+                    (relation) => relation.contains === product.id
+                );
 
                 // Root assembly acts a container, but is not contained in any other product
                 if (productIsContainer && !productIsContained) {
@@ -167,9 +178,7 @@ class StepToJsonParser {
         } catch (error) {
             throw new Error('Root component could not be found');
         }
-
     }
-
 
     /**
      * Returns the preprocessed file
@@ -177,7 +186,6 @@ class StepToJsonParser {
     getPreProcessedObject() {
         return this.preprocessedFile;
     }
-
 
     /**
      * Returns a containment structure object for a given product object that has id and name
@@ -198,7 +206,7 @@ class StepToJsonParser {
         const structureObject = {
             id: rootProduct.id,
             name: rootProduct.name,
-            contains: [],
+            contains: []
         };
 
         if (visitorFunction !== undefined) {
@@ -210,7 +218,9 @@ class StepToJsonParser {
             buildSubject.next(++relationsChecked);
             if (relation.container === rootProduct.id) {
                 const containedProduct = this.getContainedProduct(relation.contains);
-                structureObject.contains.push(this.buildStructureObject(containedProduct, buildSubject, visitorFunction));
+                structureObject.contains.push(
+                    this.buildStructureObject(containedProduct, buildSubject, visitorFunction)
+                );
             }
         });
 
@@ -223,7 +233,6 @@ class StepToJsonParser {
         return structureObject;
     }
 
-
     /**
      * Checks if a productId serves as a container for other products
      *
@@ -235,7 +244,6 @@ class StepToJsonParser {
         return isContainer;
     }
 
-
     /**
      * Get the contained product of a relation given a relation's 'contained-id'
      * @param {string} relationContainsId 'contains-id' of the relation
@@ -243,7 +251,6 @@ class StepToJsonParser {
     getContainedProduct(relationContainsId) {
         return this.products.find((product) => product.id === relationContainsId);
     }
-
 
     /**
      * Returns the name for a given product id
@@ -261,7 +268,6 @@ class StepToJsonParser {
         return productName;
     }
 
-
     /**
      * Removes linebreaks that are always present at the end of a line inside a STEP file
      * @param {String} str String that the linebreak will be removed from
@@ -269,7 +275,6 @@ class StepToJsonParser {
     static removeLinebreaks(str) {
         return str.replace(/[\r\n]+/gm, '');
     }
-
 
     /**
      * Returns attributes of a line that are defined inside parantheses
@@ -283,7 +288,6 @@ class StepToJsonParser {
         return attributes;
     }
 
-
     /**
      * Fixes German umlauts
      * @param {string} stringToFix The string that will be fixed
@@ -292,7 +296,8 @@ class StepToJsonParser {
         let fixedString = stringToFix;
 
         if (stringToFix.includes('\\X\\')) {
-            fixedString = stringToFix.replace('\\X\\C4', 'Ae')
+            fixedString = stringToFix
+                .replace('\\X\\C4', 'Ae')
                 .replace('\\X\\E4', 'ae')
                 .replace('\\X\\D6', 'Oe')
                 .replace('\\X\\F6', 'oe')
@@ -307,9 +312,12 @@ class StepToJsonParser {
      */
     static uuidVisitor() {
         const id = uuidv4();
-        const result = { key: 'uuid', value: id };
+        const result = {
+            key: 'uuid',
+            value: id
+        };
         return result;
     }
-
 }
-exports.StepToJsonParser = StepToJsonParser
+
+exports.StepToJsonParser = StepToJsonParser;

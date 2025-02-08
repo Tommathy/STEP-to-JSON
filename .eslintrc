@@ -2,6 +2,7 @@
     "parser": "@babel/eslint-parser",
     "extends": "eslint:recommended",
     "env": {
+        "es6": true,
         "mocha": true,
         "node": true
     },
@@ -9,12 +10,6 @@
         "indent": [
             "error",
             4
-        ],
-        "padded-blocks": [
-            "error",
-            {
-                "classes": "always"
-            }
         ],
         "max-len": [
             2,

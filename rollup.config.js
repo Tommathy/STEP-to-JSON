@@ -2,7 +2,7 @@ const { nodeResolve } = require('@rollup/plugin-node-resolve');
 const commonjs = require('@rollup/plugin-commonjs');
 const babel = require('@rollup/plugin-babel');
 
-const dist = 'dist'
+const dist = 'dist';
 
 module.exports = {
     input: 'src/parser.js',
@@ -24,7 +24,9 @@ module.exports = {
     plugins: [
         nodeResolve(),
         commonjs(), // Converts CommonJS modules to ES6
-        babel({ babelHelpers: 'bundled' }), // Transpile with Babel
+        babel({
+            babelHelpers: 'bundled'
+        }) // Transpile with Babel
         //terser() // Minify the bundle (optional)
     ]
-}
+};
