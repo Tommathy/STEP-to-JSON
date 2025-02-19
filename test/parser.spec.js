@@ -2,6 +2,7 @@ const { assert, expect } = require('chai');
 const { join } = require('path');
 const { readFileSync } = require('fs');
 const { StepToJsonParser } = require('../src/parser.js');
+const { fixSpecialChars } = require('../src/utils.js');
 
 const stepFile = readFileSync(join(__dirname, '/Workbench.stp'));
 const parser = new StepToJsonParser(stepFile);
@@ -41,7 +42,7 @@ describe('Testing util functions', () => {
             const textWithCorrectUmlauts = 'Ae - ae - Oe - oe - Ue - ue';
 
             assert.equal(
-                StepToJsonParser.fixSpecialChars(stepRenderedTextWithUmlauts),
+                fixSpecialChars(stepRenderedTextWithUmlauts),
                 textWithCorrectUmlauts,
                 'Function should fix German umlauts'
             );
