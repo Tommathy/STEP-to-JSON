@@ -1,5 +1,4 @@
 const Subject = require('rxjs').Subject;
-const { v4: uuidv4 } = require('uuid');
 const { fixSpecialChars } = require('./utils.js');
 const { AttributeParser } = require("./AttributeParser.js")
 
@@ -350,18 +349,6 @@ class StepToJsonParser {
      */
     static getAttributes(attributesString) {
         return new AttributeParser(attributesString).parse() // new Attribute Parser implementation
-    }
-
-    /**
-     * An exemplary visitor function that creates a UUID
-     */
-    static uuidVisitor() {
-        const id = uuidv4();
-        const result = {
-            key: 'uuid',
-            value: id
-        };
-        return result;
     }
 }
 
