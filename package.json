@@ -6,6 +6,7 @@
     "module": "dist/parser.esm.js",
     "browser": "dist/parser.umd.js",
     "scripts": {
+        "debug": "node ./demo/main.js",
         "lint": "eslint src test",
         "fix": "npx prettier . --write",
         "test": "mocha --require @babel/register",

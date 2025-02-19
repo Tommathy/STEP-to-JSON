@@ -1,8 +1,43 @@
 const Subject = require('rxjs').Subject;
 const { v4: uuidv4 } = require('uuid');
+const { fixSpecialChars } = require('./utils.js');
+const { AttributeParser } = require("./AttributeParser.js")
+
+/**
+ * @typedef {"PRODUCT_DEFINITION"|"NEXT_ASSEMBLY_USAGE_OCCURRENCE"} Entities
+ */
+
+/**
+ * @typedef {Object} ParserOptions
+ * @property {String} force force parse file, allows first line to be different than "ISO-10303-21"
+ */
+
+/**
+ * @typedef {Object} StpHeader
+ * @property {String} fileName name of this exchange structure- There is no strict rule how to use this field
+ * @property {String} fileSchema Specifies one or several Express schema governing the information in the data section(s)
+ * @property {String} fileDescription A brief description of the contents of the file.
+ */
+
+/**
+ * @typedef {Object} PreprocessedData
+ * @property {String} productDefinitions
+ * @property {String} nextAssemblyUsageOccurences
+ */
+
+/**
+ * @typedef {Object} PreprocessedFile
+ * @property {StpHeader} header pre processed header section lines
+ * @property {Object.<string, Entities>} data  pre processed data section lines
+ */
 
 class StepToJsonParser {
-    constructor(file) {
+    /**
+     * @param {String} file
+     * @param {ParserOptions} parserOptions
+     */
+    constructor(file, parserOptions = {}) {
+        this.forceParse = parserOptions.force ?? false;
         this.file = file;
         this.preprocessedFile = {
             header: {
@@ -10,23 +45,22 @@ class StepToJsonParser {
                 fileName: '',
                 fileSchema: ''
             },
-            data: {
-                productDefinitions: [],
-                nextAssemblyUsageOccurences: []
-            }
+            data: {}
         };
+
         this.preprocessFile();
     }
 
     /**
      * Parses a STEP file and outputs its contents as a JSON tree
+     *
      * @param {function} visitorFunction A function that will be executed for every product occurrence of the assembly
      * @param {Subject} sub A subject that can be used to track progress
      */
     parse(visitorFunction = undefined, sub = new Subject()) {
-        this.parseProductDefinitions(this.preprocessedFile.data.productDefinitions);
+        this.parseProductDefinitions(this.preprocessedFile.data.PRODUCT_DEFINITION);
         this.parseNextAssemblyUsageOccurences(
-            this.preprocessedFile.data.nextAssemblyUsageOccurences
+            this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE
         );
         const rootAssembly = this.identifyRootAssembly();
         const result = this.buildStructureObject(rootAssembly, sub, visitorFunction);
@@ -43,43 +77,90 @@ class StepToJsonParser {
 
     /**
      * Splits the STEP-file into single lines and stores all lines that contain product definitions and assembly relations
+     *
+     * @returns {preprocessedFile} preprocessed data representation of the stepfile
      */
     preprocessFile() {
-        let lines;
-        try {
-            lines = this.file.toString().split(');');
-        } catch (error) {
-            throw new Error(`Error while reading the file, filePath: ${this.file}`, error);
+        /**
+         * Construct a generic error message for the current preprocess action
+         * @param {String} message
+         * @returns {Error}
+         */
+        function createErrorMessage(message) {
+            return `Line: ${lineCount} | ${message}`;
         }
 
-        lines.forEach((line) => {
-            line = StepToJsonParser.removeLinebreaks(line);
+        let lineCount = 1;
+        let activeSections = [];
+        let lines;
+        try {
+            lines = this.file.toString().split(/;[\r\n]+/gm);
+        } catch (error) {
+            throw new Error(createErrorMessage(`Error while parsing step file`), error);
+        }
 
-            if (line.includes('FILE_NAME')) {
-                this.preprocessedFile.header.fileName = line;
-                return;
+        const filePrefix = lines.shift();
+        // this parser is only tested with ISO-10303-21 files
+        if (!(filePrefix == 'ISO-10303-21' || this.forceParse))
+            throw new Error(
+                createErrorMessage(
+                    'Unsupported step file provided. First line does not match ISO-10303-21'
+                )
+            );
+
+        this.filePrefix = filePrefix;
+
+        for (const line of lines) {
+            lineCount += 1;
+
+            // Keep track of sections
+            if (['HEADER', 'DATA'].includes(line)) {
+                activeSections.push(line);
+                continue;
             }
 
-            if (line.includes('FILE_SCHEMA')) {
-                this.preprocessedFile.header.fileSchema = line;
-                return;
+            if (line == 'ENDSEC') {
+                activeSections.pop(line);
+                continue;
             }
 
-            if (line.includes('FILE_DESCRIPTION')) {
-                this.preprocessedFile.header.fileDescription = line;
-                return;
+            if (line == 'END-ISO-10303-21') {
+                break; // File end detected, exit processor loop
             }
 
-            if (line.includes('PRODUCT_DEFINITION(')) {
-                this.preprocessedFile.data.productDefinitions.push(line);
-                return;
-            }
+            // We are currently not in a section, skip
+            if (activeSections.length == 0) continue;
+            let currentSection = activeSections[activeSections.length - 1];
 
-            if (line.includes('NEXT_ASSEMBLY_USAGE_OCCURRENCE(')) {
-                this.preprocessedFile.data.nextAssemblyUsageOccurences.push(line);
-                return;
+            if (currentSection == 'HEADER') {
+                if (line.includes('FILE_NAME')) {
+                    this.preprocessedFile.header.fileName = line;
+                    continue;
+                }
+
+                if (line.includes('FILE_SCHEMA')) {
+                    this.preprocessedFile.header.fileSchema = line;
+                    continue;
+                }
+
+                if (line.includes('FILE_DESCRIPTION')) {
+                    this.preprocessedFile.header.fileDescription = line;
+                    continue;
+                }
+            } else if (currentSection == 'DATA') {
+                // TODO: Check if something else is here more efficient
+                // Replace new line followed by whitespace & match basic parameters
+                const [, instanceName, entity, parameters] = line.replaceAll(/[\r\n]*\s+/g, "").match(
+                    /^#([0-9]*)[= ]*([A-Z_]*)([^]*)$/
+                );
+
+                if (!this.preprocessedFile.data[entity]) {
+                    this.preprocessedFile.data[entity] = new Map();
+                }
+                this.preprocessedFile.data[entity].set(instanceName, parameters);
             }
-        });
+        }
+
         return this.preprocessedFile;
     }
 
@@ -93,16 +174,15 @@ class StepToJsonParser {
     parseNextAssemblyUsageOccurences(nextAssemblyUsageOccurences, subject = new Subject()) {
         let progress = 1;
         const assemblyRelations = [];
-        nextAssemblyUsageOccurences.forEach((element) => {
+        nextAssemblyUsageOccurences.forEach((rawAttributes, id) => {
             subject.next(progress++);
 
-            // get id by splitting at '=' and removing '#'
-            const newId = element.split('=')[0].slice(1);
+            const newId = id
+            const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
-            const attributes = StepToJsonParser.getAttributes(element);
 
-            const container = attributes[3].slice(1); // Remove #
-            const contained = attributes[4].slice(1); // Remove #
+            const container = attributes[0].getContains()[3].getValue();
+            const contained = attributes[0].getContains()[4].getValue();
 
             const assemblyObject = {
                 id: newId,
@@ -111,7 +191,9 @@ class StepToJsonParser {
             };
             assemblyRelations.push(assemblyObject);
         });
+
         subject.complete();
+
         this.relations = assemblyRelations;
         return assemblyRelations;
     }
@@ -125,21 +207,19 @@ class StepToJsonParser {
      */
     parseProductDefinitions(productDefinitionLines, subject = new Subject()) {
         let progress = 1;
-
         const products = [];
 
-        productDefinitionLines.forEach((pDLine) => {
+        productDefinitionLines.forEach((rawAttributes, id) => {
             subject.next(progress++);
 
-            const attributes = StepToJsonParser.getAttributes(pDLine);
+            const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
-            const newId = pDLine.split('=')[0].slice(1); // Remove #
-            const name = attributes[0].slice(1, attributes[0].length - 1); // Remove ' (first and last element)
-            const fixedName = StepToJsonParser.fixSpecialChars(name);
+            const newId = id;
+            const name = attributes[0].getContains()[0].getValue();
 
             const productObject = {
                 id: newId,
-                name: fixedName
+                name: fixSpecialChars(name)
             };
             products.push(productObject);
         });
@@ -174,6 +254,7 @@ class StepToJsonParser {
                     rootComponent = product;
                 }
             });
+
             return rootComponent;
         } catch (error) {
             throw new Error('Root component could not be found');
@@ -186,14 +267,6 @@ class StepToJsonParser {
     getPreProcessedObject() {
         return this.preprocessedFile;
     }
-
-    /**
-     * Returns a containment structure object for a given product object that has id and name
-     *
-     * @param {Object} rootAssemblyObject
-     * @param {Subject} buildSubject
-     * @returns
-     */
 
     /**
      * Returns a containment structure object for a given product object that has id and name
@@ -246,6 +319,7 @@ class StepToJsonParser {
 
     /**
      * Get the contained product of a relation given a relation's 'contained-id'
+     *
      * @param {string} relationContainsId 'contains-id' of the relation
      */
     getContainedProduct(relationContainsId) {
@@ -269,23 +343,13 @@ class StepToJsonParser {
     }
 
     /**
-     * Removes linebreaks that are always present at the end of a line inside a STEP file
-     * @param {String} str String that the linebreak will be removed from
-     */
-    static removeLinebreaks(str) {
-        return str.replace(/[\r\n]+/gm, '');
-    }
-
-    /**
      * Returns attributes of a line that are defined inside parantheses
-     * @param {*} line One line of a STEP-file
+     *
+     * @param {String} attributesString a string that holds all attributes e.g.: "('',#101,POSITIVE_LENGTH_MEASURE(2.E-2),#95)"
      * @returns {Array<string>} An array of attributes
      */
-    static getAttributes(line) {
-        const openParentheses = line.indexOf('(') + 1;
-        const closingParentheses = line.indexOf(')');
-        const attributes = line.slice(openParentheses, closingParentheses).split(',');
-        return attributes;
+    static getAttributes(attributesString) {
+        return new AttributeParser(attributesString).parse() // new Attribute Parser implementation
     }
 
     /**
