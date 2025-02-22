@@ -1,9 +1,9 @@
 const Subject = require('rxjs').Subject;
 const { fixSpecialChars } = require('./utils.js');
-const { AttributeParser } = require("./AttributeParser.js")
+const { AttributeParser } = require('./AttributeParser.js');
 
 /**
- * @typedef {"PRODUCT_DEFINITION"|"NEXT_ASSEMBLY_USAGE_OCCURRENCE"} Entities
+ * @typedef {"PRODUCT_DEFINITION"|"NEXT_ASSEMBLY_USAGE_OCCURRENCE"|"COLOUR_RGB"} Entities
  */
 
 /**
@@ -93,7 +93,7 @@ class StepToJsonParser {
         let activeSections = [];
         let lines;
         try {
-            lines = this.file.toString().split(/;[\r\n]+/gm);
+            lines = this.file.split(/;[\r\n]+/gm);
         } catch (error) {
             throw new Error(createErrorMessage(`Error while parsing step file`), error);
         }
@@ -149,9 +149,8 @@ class StepToJsonParser {
             } else if (currentSection == 'DATA') {
                 // TODO: Check if something else is here more efficient
                 // Replace new line followed by whitespace & match basic parameters
-                const [, instanceName, entity, parameters] = line.replaceAll(/[\r\n]*\s+/g, "").match(
-                    /^#([0-9]*)[= ]*([A-Z_]*)([^]*)$/
-                );
+                const [, instanceName, entity, parameters] = line
+                    .match(/^#([0-9]*)[= ]*([A-Z_]*)([^]*)$/);
 
                 if (!this.preprocessedFile.data[entity]) {
                     this.preprocessedFile.data[entity] = new Map();
@@ -176,12 +175,11 @@ class StepToJsonParser {
         nextAssemblyUsageOccurences.forEach((rawAttributes, id) => {
             subject.next(progress++);
 
-            const newId = id
+            const newId = id;
             const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
-
-            const container = attributes[0].getContains()[3].getValue();
-            const contained = attributes[0].getContains()[4].getValue();
+            const container = attributes.getContains()[3].getValue();
+            const contained = attributes.getContains()[4].getValue();
 
             const assemblyObject = {
                 id: newId,
@@ -214,7 +212,7 @@ class StepToJsonParser {
             const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
             const newId = id;
-            const name = attributes[0].getContains()[0].getValue();
+            const name = attributes.getContains()[0].getValue();
 
             const productObject = {
                 id: newId,
@@ -326,29 +324,13 @@ class StepToJsonParser {
     }
 
     /**
-     * Returns the name for a given product id
-     *
-     * @param {string} productId ID of the product
-     * @returns {string} Name of the product
-     */
-    getProductName(productId) {
-        let productName = '';
-        this.products.forEach((element) => {
-            if (element.id === productId) {
-                productName = element.name;
-            }
-        });
-        return productName;
-    }
-
-    /**
      * Returns attributes of a line that are defined inside parantheses
      *
      * @param {String} attributesString a string that holds all attributes e.g.: "('',#101,POSITIVE_LENGTH_MEASURE(2.E-2),#95)"
      * @returns {Array<string>} An array of attributes
      */
     static getAttributes(attributesString) {
-        return new AttributeParser(attributesString).parse() // new Attribute Parser implementation
+        return new AttributeParser(attributesString).parse(); // new Attribute Parser implementation
     }
 }
 

@@ -302,12 +302,12 @@ class StringConsumer extends Consumer {
             return;
         }
 
-        if (parser.current() == "'" && (parser.peek() == ',' || parser.peek() == ')')) {
+        if (currentConsumer?.getId() != StringConsumer.getId()) return;
+
+        if (parser.current() == "'" && (parser.peek(true) == ',' || parser.peek(true) == ')')) {
             parser.removeDataFromStack(StringConsumer.getId());
             return;
         }
-
-        if (currentConsumer?.getId() != StringConsumer.getId()) return;
 
         currentConsumer.addMatch(parser.current());
         return;
@@ -411,9 +411,10 @@ class SubtypeConsumer extends Consumer {
 class AttributeParser {
     constructor(content) {
         this._currentIndex = -1;
+        this._lastIndex = -1;
         this.content = Array.from(content);
         this.consumerStack = [];
-        this.output = [];
+        this.output = null;
     }
 
     static consumerType = {
@@ -440,15 +441,14 @@ class AttributeParser {
         this.consumerStack.push(data);
 
         // Just add data, if nothing exists here
-        if (this.output.length == 0) {
-            this.output.push(data);
+        if (!this.output) {
+            this.output = data;
             return data;
         }
 
         // Let's check if we are allowed to push data to its contains, otherways push to the end
-        const latestsOutputEntry = this.output[this.output.length - 1];
-        if (latestsOutputEntry.canContain(data)) latestsOutputEntry.addConsumer(data);
-        else this.output.push(data);
+        if (this.output.canContain(data)) this.output.addConsumer(data);
+        else throw new Error('Could not parse arguments string');
 
         return data;
     }
@@ -463,25 +463,38 @@ class AttributeParser {
         lastConsumer.finish();
     }
 
-    _nextIndex() {
-        return this._currentIndex + 1;
+    _nextIndex(skip = false) {
+        let charToSkip = 1
+        if (skip) {
+            // if (this.getCurrentData() && this.getCurrentData().getId() != StringConsumer.getId()) {
+            // Skip empty space and return and new line between arguments
+
+            while ([' ', '\n', '\r'].includes(this.content[this._currentIndex + charToSkip])) {
+                charToSkip += 1
+                if (!this.content[this._currentIndex + charToSkip]) break;
+            }
+        }
+        return this._currentIndex + charToSkip;
     }
 
     current() {
         return this.content[this._currentIndex];
     }
 
-    next() {
-        this._currentIndex = this._nextIndex();
+    next(forceSkip) {
+        let skip = this.getCurrentData()?.getId() != StringConsumer.getId()
+        this._lastIndex = this._currentIndex
+        this._currentIndex = this._nextIndex(forceSkip ?? skip);
         return this.content[this._currentIndex];
     }
 
-    peek() {
-        return this.content[this._nextIndex()];
+    peek(forceSkip) {
+        let skip = this.getCurrentData()?.getId() != StringConsumer.getId()
+        return this.content[this._nextIndex(forceSkip ?? skip)];
     }
 
     previous() {
-        return this.content[this._currentIndex - 1];
+        return this.content[this._lastIndex];
     }
 
     parse() {
@@ -519,6 +532,14 @@ class AttributeParser {
                         continue;
                     default:
                         break;
+                }
+            }
+
+            // Skip comments between arguments
+            if (this.current() == '/' && this.peek() == '*') {
+                while (this.current() == '*' && this.peek() == '/') {
+                    if (!this.current()) return this.output;
+                    this.next();
                 }
             }
 
