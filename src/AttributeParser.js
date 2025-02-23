@@ -398,7 +398,7 @@ class SubtypeConsumer extends Consumer {
             (parser.previous() == ',' || parser.previous() == '(') &&
             parser.current() == '*'
         ) {
-            parser.pushDataToStack(new UnsetConsumer());
+            parser.pushDataToStack(new SubtypeConsumer());
             parser.getCurrentData().addMatch(parser.current());
             parser.removeDataFromStack(SubtypeConsumer.getId());
             return;
@@ -557,4 +557,4 @@ class AttributeParser {
     }
 }
 
-exports.AttributeParser = AttributeParser;
+export { AttributeParser };

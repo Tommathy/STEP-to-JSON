@@ -1,6 +1,10 @@
-const Subject = require('rxjs').Subject;
-const { fixSpecialChars } = require('./utils.js');
-const { AttributeParser } = require('./AttributeParser.js');
+import { AttributeParser } from './AttributeParser.js';
+import { ColourRGB } from './entities/ColourRGB.js';
+import { NextAssemblyUsageOccurrence } from './entities/NextAssemblyUsageOccurrence.js';
+import { Product } from './entities/Product.js';
+import { ProductDefinition } from './entities/ProductDefinition.js';
+import { Subject } from 'rxjs';
+import { fixSpecialChars } from './utils.js';
 
 /**
  * @typedef {"PRODUCT_DEFINITION"|"NEXT_ASSEMBLY_USAGE_OCCURRENCE"|"COLOUR_RGB"} Entities
@@ -31,6 +35,13 @@ const { AttributeParser } = require('./AttributeParser.js');
  */
 
 class StepToJsonParser {
+    entities = {
+        COLOUR_RGB: ColourRGB,
+        NEXT_ASSEMBLY_USAGE_OCCURRENCE: NextAssemblyUsageOccurrence,
+        PRODUCT: Product,
+        PRODUCT_DEFINITION: ProductDefinition
+    };
+
     /**
      * @param {String} file
      * @param {ParserOptions} parserOptions
@@ -149,13 +160,45 @@ class StepToJsonParser {
             } else if (currentSection == 'DATA') {
                 // TODO: Check if something else is here more efficient
                 // Replace new line followed by whitespace & match basic parameters
-                const [, instanceName, entity, parameters] = line
-                    .match(/^#([0-9]*)[= ]*([A-Z_]*)([^]*)$/);
+                const [, instanceName, entity, parameters] = line.match(
+                    /^#([0-9]*)[= ]*([A-Z_0-9]*)([^]*)$/
+                );
 
                 if (!this.preprocessedFile.data[entity]) {
                     this.preprocessedFile.data[entity] = new Map();
                 }
-                this.preprocessedFile.data[entity].set(instanceName, parameters);
+
+                if (lineCount % 10000 == 0) {
+                    const memoryUsage = process.memoryUsage();
+                    const cpuUsage = process.cpuUsage();
+
+                    console.log(`\n${lineCount}/${lines.length}`);
+                    console.log('\nMemory Usage:');
+                    console.log(
+                        `- RSS (Resident Set Size): ${Math.round(memoryUsage.rss / (1024 * 1024))} MB`
+                    );
+                    console.log(
+                        `- Heap Total: ${Math.round(memoryUsage.heapTotal / (1024 * 1024))} MB`
+                    );
+                    console.log(
+                        `- Heap Used: ${Math.round(memoryUsage.heapUsed / (1024 * 1024))} MB`
+                    );
+                    console.log(
+                        `- External: ${Math.round(memoryUsage.external / (1024 * 1024))} MB`
+                    );
+
+                    console.log('\nCPU Usage:');
+                    console.log(`- User CPU Time: ${cpuUsage.user / 1000} ms`);
+                    console.log(`- System CPU Time: ${cpuUsage.system / 1000} ms`);
+                }
+
+                const targetEntity = this.entities[entity];
+                if (targetEntity) {
+                    this.preprocessedFile.data[entity].set(
+                        instanceName,
+                        new targetEntity(parameters)
+                    );
+                }
             }
         }
 
@@ -174,7 +217,7 @@ class StepToJsonParser {
         const assemblyRelations = [];
         nextAssemblyUsageOccurences.forEach((rawAttributes, id) => {
             subject.next(progress++);
-
+            console.log(rawAttributes)
             const newId = id;
             const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
@@ -334,4 +377,4 @@ class StepToJsonParser {
     }
 }
 
-exports.StepToJsonParser = StepToJsonParser;
+export { StepToJsonParser };

@@ -1,10 +1,9 @@
-const { v4: uuidv4 } = require('uuid');
-
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Fixes German umlauts
  * @param {string} stringToFix The string that will be fixed
  */
-exports.fixSpecialChars = (stringToFix) => {
+const fixSpecialChars = (stringToFix) => {
     let fixedString = stringToFix;
 
     if (stringToFix.includes('\\X\\')) {
@@ -22,7 +21,7 @@ exports.fixSpecialChars = (stringToFix) => {
 /**
  * An exemplary visitor function that creates a UUID
  */
-exports.uuidVisitor = () => {
+const uuidVisitor = () => {
     const id = uuidv4();
     const result = {
         key: 'uuid',
@@ -30,3 +29,5 @@ exports.uuidVisitor = () => {
     };
     return result;
 };
+
+export { uuidVisitor, fixSpecialChars };

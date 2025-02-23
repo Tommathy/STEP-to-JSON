@@ -5,6 +5,7 @@
     "main": "dist/parser.cjs.js",
     "module": "dist/parser.esm.js",
     "browser": "dist/parser.umd.js",
+    "type": "module",
     "scripts": {
         "debug": "node ./demo/main.js",
         "lint": "eslint src test",
