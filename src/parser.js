@@ -1,9 +1,71 @@
+import { AdvancedBrepShapeRepresentation } from './entities/AdvancedBrepShapeRepresentation.js';
+import { AdvancedFace } from './entities/AdvancedFace.js';
+import { ApplicationContext } from './entities/ApplicationContext.js';
 import { AttributeParser } from './AttributeParser.js';
+import { Axis2Placement2d } from './entities/Axis2Placement2d.js';
+import { Axis2Placement3d } from './entities/Axis2Placement3d.js';
+import { BSplineCurveWithKnots } from './entities/BSplineCurveWithKnots.js';
+import { BSplineSurfaceWithKnots } from './entities/BSplineSurfaceWithKnots.js';
+import { CartesianPoint } from './entities/CartesianPoint.js';
+import { Circle } from './entities/Circle.js';
+import { ClosedShell } from './entities/ClosedShell.js';
 import { ColourRGB } from './entities/ColourRGB.js';
+import { ConicalSurface } from './entities/ConicalSurface.js';
+import { ContextDependentShapeRepresentation } from './entities/ContextDependentShapeRepresentation.js';
+import { CurveStyle } from './entities/CurveStyle.js';
+import { CylindricalSurface } from './entities/CylindricalSurface.js';
+import { DefinitionalRepresentation } from './entities/DefinitionalRepresentation.js';
+import { DescriptiveRepresentationItem } from './entities/DescriptiveRepresentationItem.js';
+import { Direction } from './entities/Direction.js';
+import { DraughtingPreDefinedColour } from './entities/DraughtingPreDefinedColour.js';
+import { DraughtingPreDefinedCurveFont } from './entities/DraughtingPreDefinedCurveFont.js';
+import { EdgeCurve } from './entities/EdgeCurve.js';
+import { EdgeLoop } from './entities/EdgeLoop.js';
+import { Ellipse } from './entities/Ellipse.js';
+import { FaceBound } from './entities/FaceBound.js';
+import { FillAreaStyle } from './entities/FillAreaStyle.js';
+import { FillAreaStyleColour } from './entities/FillAreaStyleColour.js';
+import { GeometricCurveSet } from './entities/GeometricCurveSet.js';
+import { ItemDefinedTransformation } from './entities/ItemDefinedTransformation.js';
+import { Line } from './entities/Line.js';
+import { ManifoldSolidBrep } from './entities/ManifoldSolidBrep.js';
+import { MechanicalDesignGeometricPresentationRepresentation } from './entities/MechanicalDesignGeometricPresentationRepresentation.js';
 import { NextAssemblyUsageOccurrence } from './entities/NextAssemblyUsageOccurrence.js';
+import { OpenShell } from './entities/OpenShell.js';
+import { OrientedEdge } from './entities/OrientedEdge.js';
+import { OverRidingStyledItem } from './entities/OverRidingStyledItem.js';
+import { Pcurve } from './entities/Pcurve.js';
+import { Plane } from './entities/Plane.js';
+import { PresentationLayerAssignment } from './entities/PresentationLayerAssignment.js';
+import { PresentationStyleAssignment } from './entities/PresentationStyleAssignment.js';
 import { Product } from './entities/Product.js';
+import { ProductContext } from './entities/ProductContext.js';
 import { ProductDefinition } from './entities/ProductDefinition.js';
+import { ProductDefinitionContext } from './entities/ProductDefinitionContext.js';
+import { ProductDefinitionFormation } from './entities/ProductDefinitionFormation.js';
+import { ProductDefinitionShape } from './entities/ProductDefinitionShape.js';
+import { ProductRelatedProductCategory } from './entities/ProductRelatedProductCategory.js';
+import { PropertyDefinition } from './entities/PropertyDefinition.js';
+import { PropertyDefinitionRepresentation } from './entities/PropertyDefinitionRepresentation.js';
+import { Representation } from './entities/Representation.js';
+import { SeamCurve } from './entities/SeamCurve.js';
+import { ShapeDefinitionRepresentation } from './entities/ShapeDefinitionRepresentation.js';
+import { ShapeRepresentation } from './entities/ShapeRepresentation.js';
+import { ShellBasedSurfaceModel } from './entities/ShellBasedSurfaceModel.js';
+import { SphericalSurface } from './entities/SphericalSurface.js';
+import { StyledItem } from './entities/StyledItem.js';
 import { Subject } from 'rxjs';
+import { SurfaceCurve } from './entities/SurfaceCurve.js';
+import { SurfaceOfLinearExtrusion } from './entities/SurfaceOfLinearExtrusion.js';
+import { SurfaceSideStyle } from './entities/SurfaceSideStyle.js';
+import { SurfaceStyleFillArea } from './entities/SurfaceStyleFillArea.js';
+import { SurfaceStyleUsage } from './entities/SurfaceStyleUsage.js';
+import { ToroidalSurface } from './entities/ToroidalSurface.js';
+import { TrimmedCurve } from './entities/TrimmedCurve.js';
+import { UncertaintyMeasureWithUnit } from './entities/UncertaintyMeasureWithUnit.js';
+import { Vector } from './entities/Vector.js';
+import { VertexLoop } from './entities/VertexLoop.js';
+import { VertexPoint } from './entities/VertexPoint.js';
 import { fixSpecialChars } from './utils.js';
 
 /**
@@ -36,10 +98,73 @@ import { fixSpecialChars } from './utils.js';
 
 class StepToJsonParser {
     entities = {
+        ADVANCED_BREP_SHAPE_REPRESENTATION: AdvancedBrepShapeRepresentation,
+        ADVANCED_FACE: AdvancedFace,
+        APPLICATION_CONTEXT: ApplicationContext,
+        AXIS2_PLACEMENT_2D: Axis2Placement2d,
+        AXIS2_PLACEMENT_3D: Axis2Placement3d,
+        B_SPLINE_CURVE_WITH_KNOTS: BSplineCurveWithKnots,
+        B_SPLINE_SURFACE_WITH_KNOTS: BSplineSurfaceWithKnots,
+        CARTESIAN_POINT: CartesianPoint,
+        CIRCLE: Circle,
+        CLOSED_SHELL: ClosedShell,
         COLOUR_RGB: ColourRGB,
+        CONICAL_SURFACE: ConicalSurface,
+        CONTEXT_DEPENDENT_SHAPE_REPRESENTATION: ContextDependentShapeRepresentation,
+        CURVE_STYLE: CurveStyle,
+        CYLINDRICAL_SURFACE: CylindricalSurface,
+        DEFINITIONAL_REPRESENTATION: DefinitionalRepresentation,
+        DESCRIPTIVE_REPRESENTATION_ITEM: DescriptiveRepresentationItem,
+        DIRECTION: Direction,
+        DRAUGHTING_PRE_DEFINED_COLOUR: DraughtingPreDefinedColour,
+        DRAUGHTING_PRE_DEFINED_CURVE_FONT: DraughtingPreDefinedCurveFont,
+        EDGE_CURVE: EdgeCurve,
+        EDGE_LOOP: EdgeLoop,
+        ELLIPSE: Ellipse,
+        FACE_BOUND: FaceBound,
+        FILL_AREA_STYLE_COLOUR: FillAreaStyleColour,
+        FILL_AREA_STYLE: FillAreaStyle,
+        GEOMETRIC_CURVE_SET: GeometricCurveSet,
+        ITEM_DEFINED_TRANSFORMATION: ItemDefinedTransformation,
+        LINE: Line,
+        MANIFOLD_SOLID_BREP: ManifoldSolidBrep,
+        MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION:
+            MechanicalDesignGeometricPresentationRepresentation,
         NEXT_ASSEMBLY_USAGE_OCCURRENCE: NextAssemblyUsageOccurrence,
+        OPEN_SHELL: OpenShell,
+        ORIENTED_EDGE: OrientedEdge,
+        OVER_RIDING_STYLED_ITEM: OverRidingStyledItem,
+        PCURVE: Pcurve,
+        PLANE: Plane,
+        PRESENTATION_LAYER_ASSIGNMENT: PresentationLayerAssignment,
+        PRESENTATION_STYLE_ASSIGNMENT: PresentationStyleAssignment,
+        PRODUCT_CONTEXT: ProductContext,
+        PRODUCT_DEFINITION_CONTEXT: ProductDefinitionContext,
+        PRODUCT_DEFINITION_FORMATION: ProductDefinitionFormation,
+        PRODUCT_DEFINITION_SHAPE: ProductDefinitionShape,
+        PRODUCT_DEFINITION: ProductDefinition,
+        PRODUCT_RELATED_PRODUCT_CATEGORY: ProductRelatedProductCategory,
         PRODUCT: Product,
-        PRODUCT_DEFINITION: ProductDefinition
+        PROPERTY_DEFINITION_REPRESENTATION: PropertyDefinitionRepresentation,
+        PROPERTY_DEFINITION: PropertyDefinition,
+        REPRESENTATION: Representation,
+        SEAM_CURVE: SeamCurve,
+        SHAPE_DEFINITION_REPRESENTATION: ShapeDefinitionRepresentation,
+        SHAPE_REPRESENTATION: ShapeRepresentation,
+        SHELL_BASED_SURFACE_MODEL: ShellBasedSurfaceModel,
+        SPHERICAL_SURFACE: SphericalSurface,
+        STYLED_ITEM: StyledItem,
+        SURFACE_CURVE: SurfaceCurve,
+        SURFACE_OF_LINEAR_EXTRUSION: SurfaceOfLinearExtrusion,
+        SURFACE_SIDE_STYLE: SurfaceSideStyle,
+        SURFACE_STYLE_FILL_AREA: SurfaceStyleFillArea,
+        SURFACE_STYLE_USAGE: SurfaceStyleUsage,
+        TOROIDAL_SURFACE: ToroidalSurface,
+        TRIMMED_CURVE: TrimmedCurve,
+        UNCERTAINTY_MEASURE_WITH_UNIT: UncertaintyMeasureWithUnit,
+        VECTOR: Vector,
+        VERTEX_LOOP: VertexLoop,
+        VERTEX_POINT: VertexPoint
     };
 
     /**
@@ -47,6 +172,7 @@ class StepToJsonParser {
      * @param {ParserOptions} parserOptions
      */
     constructor(file, parserOptions = {}) {
+        this.printStatus = false;
         this.forceParse = parserOptions.force ?? false;
         this.file = file;
         this.preprocessedFile = {
@@ -168,7 +294,7 @@ class StepToJsonParser {
                     this.preprocessedFile.data[entity] = new Map();
                 }
 
-                if (lineCount % 10000 == 0) {
+                if (this.printStatus && lineCount % 10000 == 0) {
                     const memoryUsage = process.memoryUsage();
                     const cpuUsage = process.cpuUsage();
 
@@ -198,6 +324,8 @@ class StepToJsonParser {
                         instanceName,
                         new targetEntity(parameters)
                     );
+                } else {
+                    if (this.printStatus) console.log(`Not Implemented entity: ${entity}`);
                 }
             }
         }
@@ -215,14 +343,12 @@ class StepToJsonParser {
     parseNextAssemblyUsageOccurences(nextAssemblyUsageOccurences, subject = new Subject()) {
         let progress = 1;
         const assemblyRelations = [];
-        nextAssemblyUsageOccurences.forEach((rawAttributes, id) => {
+        nextAssemblyUsageOccurences.forEach((entity, id) => {
             subject.next(progress++);
-            console.log(rawAttributes)
             const newId = id;
-            const attributes = StepToJsonParser.getAttributes(rawAttributes);
 
-            const container = attributes.getContains()[3].getValue();
-            const contained = attributes.getContains()[4].getValue();
+            const container = entity.getRelatingProductDefinition();
+            const contained = entity.getRelatedProductDefinition();
 
             const assemblyObject = {
                 id: newId,
@@ -249,13 +375,11 @@ class StepToJsonParser {
         let progress = 1;
         const products = [];
 
-        productDefinitionLines.forEach((rawAttributes, id) => {
+        productDefinitionLines.forEach((entity, id) => {
             subject.next(progress++);
 
-            const attributes = StepToJsonParser.getAttributes(rawAttributes);
-
             const newId = id;
-            const name = attributes.getContains()[0].getValue();
+            const name = entity.getId();
 
             const productObject = {
                 id: newId,

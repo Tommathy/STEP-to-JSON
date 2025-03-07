@@ -1,14 +1,14 @@
 import { BaseEntity } from "./BaseEntity.js";
-
-/* https://www.steptools.com/stds/stp_aim/html/t_product_definition.html
- * | Attribute                   | Type                                     | Defined By                      |
- * | --------------------------- | ---------------------------------------- | ------------------------------- |
- * | id                          | identifier (STRING)                      | product_definition_relationship |
- * | name                        | label (STRING)                           | product_definition_relationship |
- * | description                 | text (STRING)                            | product_definition_relationship |
- * | relating_product_definition | product_definition_or_reference (SELECT) | product_definition_relationship |
- * | related_product_definition  | product_definition_or_reference (SELECT) | product_definition_relationship |
- * | reference_designator        | identifier (STRING)                      | assembly_component_usage        |
+/**
+ * https://www.steptools.com/stds/stp_aim/html/t_next_assembly_usage_occurrence.html
+ * | Attribute                     | Type                                     | Defined By                    |
+ * |-------------------------------|------------------------------------------|-------------------------------|
+ * | id                            | identifier (STRING)                      | product_definition_relationship |
+ * | name                          | label (STRING)                           | product_definition_relationship |
+ * | description                   | text (STRING)                            | product_definition_relationship |
+ * | relating_product_definition   | product_definition_or_reference (SELECT) | product_definition_relationship |
+ * | related_product_definition    | product_definition_or_reference (SELECT) | product_definition_relationship |
+ * | reference_designator          | identifier (STRING)                      | assembly_component_usage      |
  */
 
 class NextAssemblyUsageOccurrence extends BaseEntity {

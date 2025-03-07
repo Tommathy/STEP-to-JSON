@@ -27,7 +27,7 @@ class Product extends BaseEntity {
     }
 
     getFrameOfReference() {
-        return this.getAttributes().getContains()[3].getValue();
+        return this.getAttributes().getContains()[3].getContains();
     }
 }
 
