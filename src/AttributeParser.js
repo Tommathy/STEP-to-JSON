@@ -260,6 +260,17 @@ class BooleanConsumer extends Consumer {
     }
 
     static consume(parser) {
+        if (
+            parser.peek() == '.' &&
+            parser.previous() == '.' &&
+            (parser.current() == 'T' || parser.current() == 'F')
+        ) {
+            parser.pushDataToStack(new UnsetConsumer());
+            parser.getCurrentData().addMatch(parser.current());
+            parser.removeDataFromStack(UnsetConsumer.getId());
+            return;
+        }
+
         const currentConsumer = parser.getCurrentData();
 
         if (parser.current() == '.' && (parser.previous() == ',' || parser.previous() == '(')) {
@@ -276,6 +287,56 @@ class BooleanConsumer extends Consumer {
             parser.removeDataFromStack(BooleanConsumer.getId());
             return;
         }
+
+        return;
+    }
+}
+
+class EnumConsumer extends Consumer {
+    constructor() {
+        super(EnumConsumer.getId(), { canContain: false, hasValue: true });
+    }
+
+    finish() {
+        switch (this.getMatch()) {
+            case 'T':
+                this.setValue(true);
+                break;
+            case 'F':
+                this.setValue(false);
+                break;
+            case 'null':
+                this.setValue(null);
+                break;
+            default:
+                this.setValue(this.getMatch());
+                break;
+        }
+        this.setValue(this.getMatch());
+    }
+
+    static getId() {
+        return AttributeParser.consumerType.ENUM;
+    }
+
+    static consume(parser) {
+        let currentConsumer = parser.getCurrentData();
+
+        if (
+            currentConsumer?.getId() != EnumConsumer.getId() &&
+            (parser.previous() == ',' || parser.previous() == '(') &&
+            !parser.peek() == '.' &&
+            parser.current() == '.'
+        ) {
+            parser.pushDataToStack(new EnumConsumer());
+            return;
+        }
+
+        if (currentConsumer?.getId() != EnumConsumer.getId()) return;
+
+        parser.getCurrentData().addMatch(parser.current());
+
+        if (parser.peek() == '.') parser.removeDataFromStack(EnumConsumer.getId());
 
         return;
     }
@@ -424,6 +485,7 @@ class AttributeParser {
         UNSET: 'unset',
         SUBTYPE: 'subtype',
         BOOLEAN: 'boolean',
+        ENUM: 'enum',
         STRING: 'string',
         NUMBER: 'number'
     };
@@ -464,13 +526,13 @@ class AttributeParser {
     }
 
     _nextIndex(skip = false) {
-        let charToSkip = 1
+        let charToSkip = 1;
         if (skip) {
             // if (this.getCurrentData() && this.getCurrentData().getId() != StringConsumer.getId()) {
             // Skip empty space and return and new line between arguments
 
             while ([' ', '\n', '\r'].includes(this.content[this._currentIndex + charToSkip])) {
-                charToSkip += 1
+                charToSkip += 1;
                 if (!this.content[this._currentIndex + charToSkip]) break;
             }
         }
@@ -482,14 +544,14 @@ class AttributeParser {
     }
 
     next(forceSkip) {
-        let skip = this.getCurrentData()?.getId() != StringConsumer.getId()
-        this._lastIndex = this._currentIndex
+        let skip = this.getCurrentData()?.getId() != StringConsumer.getId();
+        this._lastIndex = this._currentIndex;
         this._currentIndex = this._nextIndex(forceSkip ?? skip);
         return this.content[this._currentIndex];
     }
 
     peek(forceSkip) {
-        let skip = this.getCurrentData()?.getId() != StringConsumer.getId()
+        let skip = this.getCurrentData()?.getId() != StringConsumer.getId();
         return this.content[this._nextIndex(forceSkip ?? skip)];
     }
 
@@ -521,8 +583,11 @@ class AttributeParser {
                     case ReferenceConsumer.getId():
                         ReferenceConsumer.consume(this);
                         continue;
-                    case BooleanConsumer.getId():
-                        BooleanConsumer.consume(this);
+                    // case BooleanConsumer.getId():
+                    //     BooleanConsumer.consume(this);
+                    //     continue;
+                    case EnumConsumer.getId():
+                        EnumConsumer.consume(this);
                         continue;
                     case UnsetConsumer.getId():
                         UnsetConsumer.consume(this);
@@ -548,7 +613,8 @@ class AttributeParser {
             NumberConsumer.consume(this);
             ReferenceConsumer.consume(this);
             TypeConsumer.consume(this);
-            BooleanConsumer.consume(this);
+            EnumConsumer.consume(this);
+            // BooleanConsumer.consume(this);
             UnsetConsumer.consume(this);
             SubtypeConsumer.consume(this);
         }
