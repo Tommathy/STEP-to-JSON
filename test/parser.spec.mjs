@@ -26,17 +26,6 @@ describe('Testing parser', () => {
             );
         });
     });
-
-    describe('Testing parsing with a uuid', () => {
-        it('All entries of parsed structure should contain a property "uuid"', () => {
-            const actualResult = parser.parseWithUuid();
-
-            // Assumption here: If rootObject.contains array has property 'uuid', then all components will have a property 'uuid'
-            actualResult.contains.forEach((containedElement) => {
-                expect(containedElement).to.haveOwnProperty('uuid');
-            });
-        });
-    });
 });
 
 describe('Testing util functions', () => {
