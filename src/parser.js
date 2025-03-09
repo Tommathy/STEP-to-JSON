@@ -54,7 +54,6 @@ import { ShapeRepresentation } from './entities/ShapeRepresentation.js';
 import { ShellBasedSurfaceModel } from './entities/ShellBasedSurfaceModel.js';
 import { SphericalSurface } from './entities/SphericalSurface.js';
 import { StyledItem } from './entities/StyledItem.js';
-import { Subject } from 'rxjs';
 import { SurfaceCurve } from './entities/SurfaceCurve.js';
 import { SurfaceOfLinearExtrusion } from './entities/SurfaceOfLinearExtrusion.js';
 import { SurfaceSideStyle } from './entities/SurfaceSideStyle.js';
@@ -189,26 +188,15 @@ class StepToJsonParser {
 
     /**
      * Parses a STEP file and outputs its contents as a JSON tree
-     *
-     * @param {function} visitorFunction A function that will be executed for every product occurrence of the assembly
-     * @param {Subject} sub A subject that can be used to track progress
      */
-    parse(visitorFunction = undefined, sub = new Subject()) {
+    parse() {
         this.parseProductDefinitions(this.preprocessedFile.data.PRODUCT_DEFINITION);
         this.parseNextAssemblyUsageOccurences(
             this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE
         );
         const rootAssembly = this.identifyRootAssembly();
-        const result = this.buildStructureObject(rootAssembly, sub, visitorFunction);
+        const result = this.buildStructureObject(rootAssembly);
         return result;
-    }
-
-    /**
-     * Parses a STEP file and outputs its contents as a JSON tree. Adds a UUID for every product occurrence
-     * @param {*} sub A subject that can be used to track progress
-     */
-    parseWithUuid(sub = new Subject()) {
-        return this.parse(StepToJsonParser.uuidVisitor, sub);
     }
 
     /**
@@ -337,14 +325,11 @@ class StepToJsonParser {
      * Parses the lines of the next assembly usage occurrence and extracts id of relation, container id, contained id and contained name
      *
      * @param {Array<string>} nextAssemblyUsageOccurences
-     * @param {Subject} subject Subject that can be used to track this function's state
      * @returns
      */
-    parseNextAssemblyUsageOccurences(nextAssemblyUsageOccurences, subject = new Subject()) {
-        let progress = 1;
+    parseNextAssemblyUsageOccurences(nextAssemblyUsageOccurences) {
         const assemblyRelations = [];
         nextAssemblyUsageOccurences.forEach((entity, id) => {
-            subject.next(progress++);
             const newId = id;
 
             const container = entity.getRelatingProductDefinition();
@@ -358,8 +343,6 @@ class StepToJsonParser {
             assemblyRelations.push(assemblyObject);
         });
 
-        subject.complete();
-
         this.relations = assemblyRelations;
         return assemblyRelations;
     }
@@ -368,15 +351,12 @@ class StepToJsonParser {
      * Parses the lines of the product definition and extracts id and name
      *
      * @param {Array<string>} productDefinitionLines
-     * @param {Subject} subject Subject that can be used to track this function's state
      * @returns
      */
-    parseProductDefinitions(productDefinitionLines, subject = new Subject()) {
-        let progress = 1;
+    parseProductDefinitions(productDefinitionLines) {
         const products = [];
 
         productDefinitionLines.forEach((entity, id) => {
-            subject.next(progress++);
 
             const newId = id;
             const name = entity.getId();
@@ -387,7 +367,6 @@ class StepToJsonParser {
             };
             products.push(productObject);
         });
-        subject.complete();
         this.products = products;
         return products;
     }
@@ -426,47 +405,26 @@ class StepToJsonParser {
     }
 
     /**
-     * Returns the preprocessed file
-     */
-    getPreProcessedObject() {
-        return this.preprocessedFile;
-    }
-
-    /**
      * Returns a containment structure object for a given product object that has id and name
      * @param {*} rootProduct The root component of the assembly
-     * @param {*} buildSubject An instance of rxjs Subject that can be used to track this function's progress
      * @param {*} visitorFunction A function that is executed for every component. Can be used to customize processing or add additional data
      */
-    buildStructureObject(rootProduct, buildSubject = new Subject(), visitorFunction = undefined) {
-        let relationsChecked = 0;
+    buildStructureObject(rootProduct) {
         const structureObject = {
             id: rootProduct.id,
             name: rootProduct.name,
             contains: []
         };
 
-        if (visitorFunction !== undefined) {
-            const visitorResult = visitorFunction(structureObject);
-            structureObject[visitorResult.key] = visitorResult.value;
-        }
-
         this.relations.forEach((relation) => {
-            buildSubject.next(++relationsChecked);
             if (relation.container === rootProduct.id) {
                 const containedProduct = this.getContainedProduct(relation.contains);
                 structureObject.contains.push(
-                    this.buildStructureObject(containedProduct, buildSubject, visitorFunction)
+                    this.buildStructureObject(containedProduct)
                 );
             }
         });
 
-        if (visitorFunction !== undefined) {
-            const visitorResult = visitorFunction(structureObject);
-            structureObject[visitorResult.key] = visitorResult.value;
-        }
-
-        buildSubject.complete();
         return structureObject;
     }
 
@@ -488,16 +446,6 @@ class StepToJsonParser {
      */
     getContainedProduct(relationContainsId) {
         return this.products.find((product) => product.id === relationContainsId);
-    }
-
-    /**
-     * Returns attributes of a line that are defined inside parantheses
-     *
-     * @param {String} attributesString a string that holds all attributes e.g.: "('',#101,POSITIVE_LENGTH_MEASURE(2.E-2),#95)"
-     * @returns {Array<string>} An array of attributes
-     */
-    static getAttributes(attributesString) {
-        return new AttributeParser(attributesString).parse(); // new Attribute Parser implementation
     }
 }
 
