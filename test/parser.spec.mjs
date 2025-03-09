@@ -1,10 +1,15 @@
-const { assert, expect } = require('chai');
-const { join } = require('path');
-const { readFileSync } = require('fs');
-const { StepToJsonParser } = require('../src/parser.js');
-const { fixSpecialChars } = require('../src/utils.js');
+import { assert, expect } from 'chai'
+import { dirname, join } from 'path'
 
-const stepFile = readFileSync(join(__dirname, '/Workbench.stp'));
+import { StepToJsonParser } from '../src/parser.js'
+import { fileURLToPath } from 'url';
+import { fixSpecialChars } from '../src/utils.js'
+import { readFileSync } from 'fs'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const stepFile = readFileSync(join(__dirname, '/Workbench.stp'), { encoding: 'utf8' });
 const parser = new StepToJsonParser(stepFile);
 
 describe('Testing parser', () => {
