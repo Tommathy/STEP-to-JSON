@@ -236,62 +236,6 @@ class TypeConsumer extends Consumer {
         return;
     }
 }
-
-class BooleanConsumer extends Consumer {
-    constructor() {
-        super(BooleanConsumer.getId(), { canContain: false, hasValue: true });
-    }
-
-    finish() {
-        switch (this.getMatch().trim()) {
-            case '.T.':
-                this.setValue(true);
-                break;
-            case '.F.':
-                this.setValue(false);
-                break;
-        }
-
-        return;
-    }
-
-    static getId() {
-        return AttributeParser.consumerType.BOOLEAN;
-    }
-
-    static consume(parser) {
-        if (
-            parser.peek() == '.' &&
-            parser.previous() == '.' &&
-            (parser.current() == 'T' || parser.current() == 'F')
-        ) {
-            parser.pushDataToStack(new UnsetConsumer());
-            parser.getCurrentData().addMatch(parser.current());
-            parser.removeDataFromStack(UnsetConsumer.getId());
-            return;
-        }
-
-        const currentConsumer = parser.getCurrentData();
-
-        if (parser.current() == '.' && (parser.previous() == ',' || parser.previous() == '(')) {
-            parser.pushDataToStack(new BooleanConsumer());
-            return;
-        }
-
-        if (currentConsumer?.getId() != BooleanConsumer.getId()) return;
-
-        if (parser.current() == 'T' || parser.current() == 'F')
-            currentConsumer.addMatch(parser.current());
-
-        if (parser.current() == '.' && (parser.peek() == ',' || parser.peek() == ')')) {
-            parser.removeDataFromStack(BooleanConsumer.getId());
-            return;
-        }
-
-        return;
-    }
-}
-
 class EnumConsumer extends Consumer {
     constructor() {
         super(EnumConsumer.getId(), { canContain: false, hasValue: true });
