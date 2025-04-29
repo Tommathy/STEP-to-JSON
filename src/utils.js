@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 /**
  * Fixes German umlauts
  * @param {string} stringToFix The string that will be fixed
@@ -18,16 +17,4 @@ const fixSpecialChars = (stringToFix) => {
     return fixedString;
 };
 
-/**
- * An exemplary visitor function that creates a UUID
- */
-const uuidVisitor = () => {
-    const id = uuidv4();
-    const result = {
-        key: 'uuid',
-        value: id
-    };
-    return result;
-};
-
-export { uuidVisitor, fixSpecialChars };
+export { fixSpecialChars };

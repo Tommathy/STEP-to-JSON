@@ -1,7 +1,6 @@
 import { AdvancedBrepShapeRepresentation } from './entities/AdvancedBrepShapeRepresentation.js';
 import { AdvancedFace } from './entities/AdvancedFace.js';
 import { ApplicationContext } from './entities/ApplicationContext.js';
-import { AttributeParser } from './AttributeParser.js';
 import { Axis2Placement2d } from './entities/Axis2Placement2d.js';
 import { Axis2Placement3d } from './entities/Axis2Placement3d.js';
 import { BSplineCurveWithKnots } from './entities/BSplineCurveWithKnots.js';
@@ -167,11 +166,11 @@ class StepToJsonParser {
     };
 
     /**
-     * @param {String} file
-     * @param {ParserOptions} parserOptions
+     * @param {String} file that needs to be processed
+     * @param {ParserOptions} parserOptions options that the parser considers
      */
     constructor(file, parserOptions = {}) {
-        this.printStatus = false;
+        this.printStatus = parserOptions.printStatus ?? false;
         this.forceParse = parserOptions.force ?? false;
         this.file = file;
         this.preprocessedFile = {

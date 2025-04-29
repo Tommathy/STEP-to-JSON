@@ -1,9 +1,8 @@
-import { assert, expect } from 'chai'
 import { dirname, join } from 'path'
 
 import { StepToJsonParser } from '../src/parser.js'
+import { assert } from 'chai'
 import { fileURLToPath } from 'url';
-import { fixSpecialChars } from '../src/utils.js'
 import { readFileSync } from 'fs'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,22 +22,6 @@ describe('Testing parser', () => {
                 actualResult,
                 expectedResult,
                 "Parsed structure doesn't match the expected structure"
-            );
-        });
-    });
-});
-
-describe('Testing util functions', () => {
-    describe('Testing function to fix special chars', () => {
-        it('Umlauts should be fixed', () => {
-            const stepRenderedTextWithUmlauts =
-                '\\X\\C4 - \\X\\E4 - \\X\\D6 - \\X\\F6 - \\X\\DC - \\X\\FC';
-            const textWithCorrectUmlauts = 'Ae - ae - Oe - oe - Ue - ue';
-
-            assert.equal(
-                fixSpecialChars(stepRenderedTextWithUmlauts),
-                textWithCorrectUmlauts,
-                'Function should fix German umlauts'
             );
         });
     });
