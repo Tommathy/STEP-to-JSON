@@ -133,7 +133,7 @@ class UnsetConsumer extends Consumer {
 
     finish() {
         // value is still null, because this argument is unset
-        this.setValue("$");
+        this.setValue('$');
         return;
     }
 
@@ -161,7 +161,7 @@ class SubtypeConsumer extends Consumer {
 
     finish() {
         // value is still null, because this argument inherts its data from "somewhere else". its weird
-        this.setValue("*");
+        this.setValue('*');
         return;
     }
 
@@ -360,7 +360,7 @@ class ReferenceConsumer extends Consumer {
 class AttributeParser {
     constructor(content) {
         this._currentIndex = 0;
-        this._content = Array.from(content);
+        this._content = Array.from(content.replace(';', '').trim());
         this._stack = [];
         this._result = null;
     }

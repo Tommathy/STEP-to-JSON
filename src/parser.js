@@ -65,6 +65,7 @@ import { Vector } from './entities/Vector.js';
 import { VertexLoop } from './entities/VertexLoop.js';
 import { VertexPoint } from './entities/VertexPoint.js';
 import { fixSpecialChars } from './utils.js';
+import { createInterface } from 'node:readline';
 
 /**
  * @typedef {"PRODUCT_DEFINITION"|"NEXT_ASSEMBLY_USAGE_OCCURRENCE"|"COLOUR_RGB"} Entities
@@ -166,7 +167,7 @@ class StepToJsonParser {
     };
 
     /**
-     * @param {String} file that needs to be processed
+     * @param {ReadStream} file that needs to be processed
      * @param {ParserOptions} parserOptions options that the parser considers
      */
     constructor(file, parserOptions = {}) {
@@ -181,14 +182,13 @@ class StepToJsonParser {
             },
             data: {}
         };
-
-        this.preprocessFile();
     }
 
     /**
      * Parses a STEP file and outputs its contents as a JSON tree
      */
-    parse() {
+    async parse() {
+        await this.preprocessFile();
         this.parseProductDefinitions(this.preprocessedFile.data.PRODUCT_DEFINITION);
         this.parseNextAssemblyUsageOccurences(
             this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE
@@ -203,7 +203,7 @@ class StepToJsonParser {
      *
      * @returns {preprocessedFile} preprocessed data representation of the stepfile
      */
-    preprocessFile() {
+    async preprocessFile() {
         /**
          * Construct a generic error message for the current preprocess action
          * @param {String} message
@@ -215,16 +215,32 @@ class StepToJsonParser {
 
         let lineCount = 1;
         let activeSections = [];
-        let lines;
+        const lines = [];
         try {
-            lines = this.file.split(/;[\r\n]+/gm);
+            const rl = createInterface({
+                input: this.file,
+                crlfDelay: Infinity
+            });
+            // Note: we use the crlfDelay option to recognize all instances of CR LF
+            // ('\r\n') in input.txt as a single line break.
+
+            for await (const line of rl) {
+                // Each line in input.txt will be successively available here as `line`.
+                let current = line;
+                // Append to the last entry if it doesn't end with ';'
+                if (lines.length > 0 && !lines[lines.length - 1].endsWith(';')) {
+                    lines[lines.length - 1] += current;
+                } else {
+                    lines.push(current);
+                }
+            }
         } catch (error) {
             throw new Error(createErrorMessage(`Error while parsing step file`), error);
         }
 
         const filePrefix = lines.shift();
         // this parser is only tested with ISO-10303-21 files
-        if (!(filePrefix == 'ISO-10303-21' || this.forceParse))
+        if (!(filePrefix == 'ISO-10303-21;' || this.forceParse))
             throw new Error(
                 createErrorMessage(
                     'Unsupported step file provided. First line does not match ISO-10303-21'
@@ -237,17 +253,17 @@ class StepToJsonParser {
             lineCount += 1;
 
             // Keep track of sections
-            if (['HEADER', 'DATA'].includes(line)) {
+            if (['HEADER;', 'DATA;'].includes(line)) {
                 activeSections.push(line);
                 continue;
             }
 
-            if (line == 'ENDSEC') {
+            if (line == 'ENDSEC;') {
                 activeSections.pop(line);
                 continue;
             }
 
-            if (line == 'END-ISO-10303-21') {
+            if (line == 'END-ISO-10303-21;') {
                 break; // File end detected, exit processor loop
             }
 
@@ -255,7 +271,7 @@ class StepToJsonParser {
             if (activeSections.length == 0) continue;
             let currentSection = activeSections[activeSections.length - 1];
 
-            if (currentSection == 'HEADER') {
+            if (currentSection == 'HEADER;') {
                 if (line.includes('FILE_NAME')) {
                     this.preprocessedFile.header.fileName = line;
                     continue;
@@ -270,7 +286,7 @@ class StepToJsonParser {
                     this.preprocessedFile.header.fileDescription = line;
                     continue;
                 }
-            } else if (currentSection == 'DATA') {
+            } else if (currentSection == 'DATA;') {
                 // TODO: Check if something else is here more efficient
                 // Replace new line followed by whitespace & match basic parameters
                 const [, instanceName, entity, parameters] = line.match(
@@ -356,7 +372,6 @@ class StepToJsonParser {
         const products = [];
 
         productDefinitionLines.forEach((entity, id) => {
-
             const newId = id;
             const name = entity.getId();
 
@@ -418,9 +433,7 @@ class StepToJsonParser {
         this.relations.forEach((relation) => {
             if (relation.container === rootProduct.id) {
                 const containedProduct = this.getContainedProduct(relation.contains);
-                structureObject.contains.push(
-                    this.buildStructureObject(containedProduct)
-                );
+                structureObject.contains.push(this.buildStructureObject(containedProduct));
             }
         });
 
