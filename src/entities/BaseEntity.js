@@ -1,4 +1,4 @@
-import { AttributeParser } from "../AttributeParser.js"
+import { AttributeParser } from '../AttributeParser.js';
 
 class BaseEntity {
     constructor(attributes) {

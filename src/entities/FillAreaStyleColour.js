@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_fill_area_style_colour.html
  * | name          | label (STRING)  | fill_area_style_colour   |
@@ -7,7 +7,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class FillAreaStyleColour extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

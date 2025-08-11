@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://www.steptools.com/stds/stp_aim/html/t_application_context.html
  * | Attribute    | Type            | Defined By          |
@@ -8,7 +8,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class ApplicationContext extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getApplication() {

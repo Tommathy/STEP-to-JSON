@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://www.steptools.com/stds/stp_aim/html/t_direction.html
  * | Attribute        | Type                    | Defined By          |
@@ -9,7 +9,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class Direction extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

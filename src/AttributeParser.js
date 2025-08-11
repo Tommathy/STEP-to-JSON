@@ -374,7 +374,7 @@ class AttributeParser {
         TYPE: 'type',
         UNSET: 'unset',
         SUBTYPE: 'subtype',
-        COMMENT: 'comment'
+        COMMENT: 'comment',
     };
 
     current() {
@@ -415,8 +415,7 @@ class AttributeParser {
 
     removeDataFromStack() {
         const currentConsumer = this.currentStackEntry();
-        if (this._stack.length == 0 || currentConsumer?.getId() != GroupConsumer.getId())
-            return null;
+        if (this._stack.length == 0 || currentConsumer?.getId() != GroupConsumer.getId()) return null;
 
         return this._stack.pop();
     }
@@ -437,9 +436,7 @@ class AttributeParser {
             if (!/[,\s\n\r]/.test(this.current())) {
                 console.log(this._content.join(''));
                 console.log(`${'~'.repeat(this._currentIndex)}^`);
-                throw new Error(
-                    `Failed to parse: ${this.current()} at index ${this._currentIndex}`
-                );
+                throw new Error(`Failed to parse: ${this.current()} at index ${this._currentIndex}`);
             }
 
             this.next(); // Dispose: ,

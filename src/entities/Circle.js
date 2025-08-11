@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://www.steptools.com/stds/stp_aim/html/t_circle.html
  * One of the most used definition has such a poor attribute nameing...
@@ -11,7 +11,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class Circle extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

@@ -8,11 +8,7 @@ function checkAttributeType(attributesString, expectedResult) {
         const attributes = new AttributeParser(attributesString);
         const contains = attributes.parse().getContains();
         const actualResult = contains.map((el) => el.getValue());
-        assert.deepEqual(
-            actualResult,
-            expectedResult,
-            "Parsed structure doesn't match the expected structure"
-        );
+        assert.deepEqual(actualResult, expectedResult, "Parsed structure doesn't match the expected structure");
     });
 }
 
@@ -48,19 +44,8 @@ describe('Types', () => {
         });
         describe('Complex Attributes', () => {
             checkAttributeType("(-1., 'international standard')", [-1, 'international standard']);
-            checkAttributeType("(.T., '=>[0:1:1:2]', -1.4789940)", [
-                true,
-                '=>[0:1:1:2]',
-                -1.478994
-            ]);
-            checkAttributeType("('2','=>[0:1:1:2]','',#18721,#19074,$)", [
-                '2',
-                '=>[0:1:1:2]',
-                '',
-                '18721',
-                '19074',
-                '$'
-            ]);
+            checkAttributeType("(.T., '=>[0:1:1:2]', -1.4789940)", [true, '=>[0:1:1:2]', -1.478994]);
+            checkAttributeType("('2','=>[0:1:1:2]','',#18721,#19074,$)", ['2', '=>[0:1:1:2]', '', '18721', '19074', '$']);
         });
     });
 

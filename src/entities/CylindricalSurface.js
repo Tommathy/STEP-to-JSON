@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://www.steptools.com/stds/stp_aim/html/t_cylindrical_surface.html
  * | Attribute   | Type                             | Defined By            |
@@ -10,7 +10,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class CylindricalSurface extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

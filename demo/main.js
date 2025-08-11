@@ -10,8 +10,8 @@ const __dirname = dirname(__filename);
 const files = [
     {
         stdFilePath: join(__dirname, '../test/data', '400115.STEP'),
-        jsonFilePath: join(__dirname, '../test/data', '400115.json')
-    }
+        jsonFilePath: join(__dirname, '../test/data', '400115.json'),
+    },
 ];
 
 for (const file of files) {

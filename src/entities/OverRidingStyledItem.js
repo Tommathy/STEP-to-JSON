@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_over_riding_styled_item.html
  * | Attribute            | Type                                          | Defined By              |
@@ -10,7 +10,7 @@ import { BaseEntity } from "./BaseEntity.js";
  */
 class OverRidingStyledItem extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

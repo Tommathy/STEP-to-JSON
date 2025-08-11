@@ -19,11 +19,7 @@ describe('Testing parser', () => {
 
             const fileContent = readFileSync(join(__dirname, '../test', 'data', 'Workbench.json'));
             const expectedResult = JSON.parse(fileContent);
-            assert.deepEqual(
-                actualResult,
-                expectedResult,
-                "Parsed structure doesn't match the expected structure"
-            );
+            assert.deepEqual(actualResult, expectedResult, "Parsed structure doesn't match the expected structure");
         });
     });
 });

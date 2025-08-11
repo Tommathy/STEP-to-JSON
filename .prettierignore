@@ -1,0 +1,6 @@
+*.stp
+*.step
+*.STP
+*.STEP
+
+test/data/*

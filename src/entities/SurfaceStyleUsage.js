@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_surface_style_usage.html
  * | Attribute     | Type                               | Defined By          |
@@ -9,7 +9,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class SurfaceStyleUsage extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getSide() {

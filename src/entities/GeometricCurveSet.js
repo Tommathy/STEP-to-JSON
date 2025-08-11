@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_geometric_curve_set.html
  * | Attribute     | Type                                 | Defined By          |
@@ -9,7 +9,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class GeometricCurveSet extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

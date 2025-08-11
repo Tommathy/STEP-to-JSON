@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_shape_representation.html
  * | Attribute        | Type                                    | Defined By     |
@@ -10,7 +10,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class ShapeRepresentation extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

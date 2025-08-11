@@ -1,4 +1,4 @@
-import { BaseEntity } from "./BaseEntity.js";
+import { BaseEntity } from './BaseEntity.js';
 
 /* https://downloads.steptools.com/docs/stp_aim/html/t_toroidal_surface.html
  * | Attribute     | Type                                | Defined By            |
@@ -11,7 +11,7 @@ import { BaseEntity } from "./BaseEntity.js";
 
 class ToroidalSurface extends BaseEntity {
     constructor(attributesString) {
-        super(attributesString)
+        super(attributesString);
     }
 
     getName() {

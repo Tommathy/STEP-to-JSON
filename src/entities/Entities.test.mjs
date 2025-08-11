@@ -20,7 +20,7 @@ describe('Entity getters', () => {
         const fr = e.getFrameOfReference();
         assert.deepEqual(
             fr.map((c) => c.getValue()),
-            ['1', '2', '3']
+            ['1', '2', '3'],
         );
     });
 
