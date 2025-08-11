@@ -2,18 +2,9 @@
 
 A parser for STEP-files that can be used in node.js as well as in frontend development. STEP-to-JSON parses STEP-files (IS0 10303-44) into a JSON structure. It extracts product definitions, relations and creates the assembly tree of all components.
 
-## How to install
-
-STEP-to-JSON can be used in both Back- and Frontend projects. To use it in your own project, simply install via NPM:
-
-```
-npm install step-to-json --save
-```
-
 It also features a CLI tool if you're just interested in parsing STEP-files manually. To use the CLI-tool, you currently have to clone / download this repository and execute the following steps:
 
 ```
-$ git clone https://github.com/aljoshakoecher/STEP-to-JSON
 $ cd <the folder you cloned to>
 $ npm install
 $ node step-to-json.js -f "<your STEP-file>.stp"

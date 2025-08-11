@@ -1,7 +1,7 @@
 import { dirname, join } from 'path'
 
 import { StepToJsonParser } from '../src/parser.js'
-import { assert } from 'chai'
+import { assert, describe, it } from "vitest";
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs'
 

@@ -1,4 +1,4 @@
-import { assert } from 'chai'
+import { assert, describe, it } from 'vitest'
 import { fixSpecialChars } from '../src/utils.js'
 
 describe('Testing util functions', () => {

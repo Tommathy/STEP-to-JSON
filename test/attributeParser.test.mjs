@@ -1,7 +1,7 @@
 import { preferredSurfaceCurveRepresentation, siPrefix } from '../src/enums.js';
 
 import { AttributeParser } from '../src/AttributeParser.js';
-import { assert } from 'chai';
+import { assert, describe, it } from 'vitest';
 
 function checkAttributeType(attributesString, expectedResult) {
     it('Parse Attribute test', () => {
