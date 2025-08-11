@@ -1,6 +1,6 @@
 import { dirname, join } from 'path';
 
-import { StepToJsonParser } from './parser.js';
+import { StepToJsonParser } from './parser.ts';
 import { assert, describe, it } from 'vitest';
 import { fileURLToPath } from 'url';
 import { createReadStream, readFileSync } from 'fs';
@@ -17,9 +17,15 @@ describe('Testing parser', () => {
         it('Parsed STEP-file should match expected result', async () => {
             const actualResult = await parser.parse();
 
-            const fileContent = readFileSync(join(__dirname, '../test', 'data', 'Workbench.json'));
-            const expectedResult = JSON.parse(fileContent);
-            assert.deepEqual(actualResult, expectedResult, "Parsed structure doesn't match the expected structure");
+            const fileContent = readFileSync(
+                join(__dirname, '../test', 'data', 'Workbench.json'),
+            );
+            const expectedResult = JSON.parse(fileContent.toString());
+            assert.deepEqual(
+                actualResult,
+                expectedResult,
+                "Parsed structure doesn't match the expected structure",
+            );
         });
     });
 });

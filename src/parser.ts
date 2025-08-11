@@ -1,0 +1,423 @@
+import { AdvancedBrepShapeRepresentation } from './entities/AdvancedBrepShapeRepresentation.js';
+import { AdvancedFace } from './entities/AdvancedFace.js';
+import { ApplicationContext } from './entities/ApplicationContext.js';
+import { Axis2Placement2d } from './entities/Axis2Placement2d.js';
+import { Axis2Placement3d } from './entities/Axis2Placement3d.js';
+import { BSplineCurveWithKnots } from './entities/BSplineCurveWithKnots.js';
+import { BSplineSurfaceWithKnots } from './entities/BSplineSurfaceWithKnots.js';
+import { CartesianPoint } from './entities/CartesianPoint.js';
+import { Circle } from './entities/Circle.js';
+import { ClosedShell } from './entities/ClosedShell.js';
+import { ColourRGB } from './entities/ColourRGB.js';
+import { ConicalSurface } from './entities/ConicalSurface.js';
+import { ContextDependentShapeRepresentation } from './entities/ContextDependentShapeRepresentation.js';
+import { CurveStyle } from './entities/CurveStyle.js';
+import { CylindricalSurface } from './entities/CylindricalSurface.js';
+import { DefinitionalRepresentation } from './entities/DefinitionalRepresentation.js';
+import { DescriptiveRepresentationItem } from './entities/DescriptiveRepresentationItem.js';
+import { Direction } from './entities/Direction.js';
+import { DraughtingPreDefinedColour } from './entities/DraughtingPreDefinedColour.js';
+import { DraughtingPreDefinedCurveFont } from './entities/DraughtingPreDefinedCurveFont.js';
+import { EdgeCurve } from './entities/EdgeCurve.js';
+import { EdgeLoop } from './entities/EdgeLoop.js';
+import { Ellipse } from './entities/Ellipse.js';
+import { FaceBound } from './entities/FaceBound.js';
+import { FillAreaStyle } from './entities/FillAreaStyle.js';
+import { FillAreaStyleColour } from './entities/FillAreaStyleColour.js';
+import { GeometricCurveSet } from './entities/GeometricCurveSet.js';
+import { ItemDefinedTransformation } from './entities/ItemDefinedTransformation.js';
+import { Line } from './entities/Line.js';
+import { ManifoldSolidBrep } from './entities/ManifoldSolidBrep.js';
+import { MechanicalDesignGeometricPresentationRepresentation } from './entities/MechanicalDesignGeometricPresentationRepresentation.js';
+import { NextAssemblyUsageOccurrence } from './entities/NextAssemblyUsageOccurrence.js';
+import { OpenShell } from './entities/OpenShell.js';
+import { OrientedEdge } from './entities/OrientedEdge.js';
+import { OverRidingStyledItem } from './entities/OverRidingStyledItem.js';
+import { Pcurve } from './entities/Pcurve.js';
+import { Plane } from './entities/Plane.js';
+import { PresentationLayerAssignment } from './entities/PresentationLayerAssignment.js';
+import { PresentationStyleAssignment } from './entities/PresentationStyleAssignment.js';
+import { Product } from './entities/Product.js';
+import { ProductContext } from './entities/ProductContext.js';
+import { ProductDefinition } from './entities/ProductDefinition.js';
+import { ProductDefinitionContext } from './entities/ProductDefinitionContext.js';
+import { ProductDefinitionFormation } from './entities/ProductDefinitionFormation.js';
+import { ProductDefinitionShape } from './entities/ProductDefinitionShape.js';
+import { ProductRelatedProductCategory } from './entities/ProductRelatedProductCategory.js';
+import { PropertyDefinition } from './entities/PropertyDefinition.js';
+import { PropertyDefinitionRepresentation } from './entities/PropertyDefinitionRepresentation.js';
+import { Representation } from './entities/Representation.js';
+import { SeamCurve } from './entities/SeamCurve.js';
+import { ShapeDefinitionRepresentation } from './entities/ShapeDefinitionRepresentation.js';
+import { ShapeRepresentation } from './entities/ShapeRepresentation.js';
+import { ShellBasedSurfaceModel } from './entities/ShellBasedSurfaceModel.js';
+import { SphericalSurface } from './entities/SphericalSurface.js';
+import { StyledItem } from './entities/StyledItem.js';
+import { SurfaceCurve } from './entities/SurfaceCurve.js';
+import { SurfaceOfLinearExtrusion } from './entities/SurfaceOfLinearExtrusion.js';
+import { SurfaceSideStyle } from './entities/SurfaceSideStyle.js';
+import { SurfaceStyleFillArea } from './entities/SurfaceStyleFillArea.js';
+import { SurfaceStyleUsage } from './entities/SurfaceStyleUsage.js';
+import { ToroidalSurface } from './entities/ToroidalSurface.js';
+import { TrimmedCurve } from './entities/TrimmedCurve.js';
+import { UncertaintyMeasureWithUnit } from './entities/UncertaintyMeasureWithUnit.js';
+import { Vector } from './entities/Vector.js';
+import { VertexLoop } from './entities/VertexLoop.js';
+import { VertexPoint } from './entities/VertexPoint.js';
+import { fixSpecialChars } from './utils.js';
+import { createInterface } from 'node:readline';
+
+// Public types
+export type ParserOptions = { force?: boolean; printStatus?: boolean };
+export type StpHeader = {
+  fileName: string;
+  fileSchema: string;
+  fileDescription: string;
+};
+
+export type ProductInfo = { id: string; name: string };
+export type RelationInfo = { id: string; container: string; contains: string };
+export type AssemblyNode = { id: string; name: string; contains: AssemblyNode[] };
+
+type EntityCtor = new (parameters: string) => any;
+type EntitiesMap = Record<string, EntityCtor>;
+
+export type PreprocessedFile = {
+  header: StpHeader;
+  data: Record<string, Map<string, any>>;
+};
+
+class StepToJsonParser {
+  public entities: EntitiesMap = {
+    ADVANCED_BREP_SHAPE_REPRESENTATION: AdvancedBrepShapeRepresentation,
+    ADVANCED_FACE: AdvancedFace,
+    APPLICATION_CONTEXT: ApplicationContext,
+    AXIS2_PLACEMENT_2D: Axis2Placement2d,
+    AXIS2_PLACEMENT_3D: Axis2Placement3d,
+    B_SPLINE_CURVE_WITH_KNOTS: BSplineCurveWithKnots,
+    B_SPLINE_SURFACE_WITH_KNOTS: BSplineSurfaceWithKnots,
+    CARTESIAN_POINT: CartesianPoint,
+    CIRCLE: Circle,
+    CLOSED_SHELL: ClosedShell,
+    COLOUR_RGB: ColourRGB,
+    CONICAL_SURFACE: ConicalSurface,
+    CONTEXT_DEPENDENT_SHAPE_REPRESENTATION: ContextDependentShapeRepresentation,
+    CURVE_STYLE: CurveStyle,
+    CYLINDRICAL_SURFACE: CylindricalSurface,
+    DEFINITIONAL_REPRESENTATION: DefinitionalRepresentation,
+    DESCRIPTIVE_REPRESENTATION_ITEM: DescriptiveRepresentationItem,
+    DIRECTION: Direction,
+    DRAUGHTING_PRE_DEFINED_COLOUR: DraughtingPreDefinedColour,
+    DRAUGHTING_PRE_DEFINED_CURVE_FONT: DraughtingPreDefinedCurveFont,
+    EDGE_CURVE: EdgeCurve,
+    EDGE_LOOP: EdgeLoop,
+    ELLIPSE: Ellipse,
+    FACE_BOUND: FaceBound,
+    FILL_AREA_STYLE_COLOUR: FillAreaStyleColour,
+    FILL_AREA_STYLE: FillAreaStyle,
+    GEOMETRIC_CURVE_SET: GeometricCurveSet,
+    ITEM_DEFINED_TRANSFORMATION: ItemDefinedTransformation,
+    LINE: Line,
+    MANIFOLD_SOLID_BREP: ManifoldSolidBrep,
+    MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION: MechanicalDesignGeometricPresentationRepresentation,
+    NEXT_ASSEMBLY_USAGE_OCCURRENCE: NextAssemblyUsageOccurrence,
+    OPEN_SHELL: OpenShell,
+    ORIENTED_EDGE: OrientedEdge,
+    OVER_RIDING_STYLED_ITEM: OverRidingStyledItem,
+    PCURVE: Pcurve,
+    PLANE: Plane,
+    PRESENTATION_LAYER_ASSIGNMENT: PresentationLayerAssignment,
+    PRESENTATION_STYLE_ASSIGNMENT: PresentationStyleAssignment,
+    PRODUCT_CONTEXT: ProductContext,
+    PRODUCT_DEFINITION_CONTEXT: ProductDefinitionContext,
+    PRODUCT_DEFINITION_FORMATION: ProductDefinitionFormation,
+    PRODUCT_DEFINITION_SHAPE: ProductDefinitionShape,
+    PRODUCT_DEFINITION: ProductDefinition,
+    PRODUCT_RELATED_PRODUCT_CATEGORY: ProductRelatedProductCategory,
+    PRODUCT: Product,
+    PROPERTY_DEFINITION_REPRESENTATION: PropertyDefinitionRepresentation,
+    PROPERTY_DEFINITION: PropertyDefinition,
+    REPRESENTATION: Representation,
+    SEAM_CURVE: SeamCurve,
+    SHAPE_DEFINITION_REPRESENTATION: ShapeDefinitionRepresentation,
+    SHAPE_REPRESENTATION: ShapeRepresentation,
+    SHELL_BASED_SURFACE_MODEL: ShellBasedSurfaceModel,
+    SPHERICAL_SURFACE: SphericalSurface,
+    STYLED_ITEM: StyledItem,
+    SURFACE_CURVE: SurfaceCurve,
+    SURFACE_OF_LINEAR_EXTRUSION: SurfaceOfLinearExtrusion,
+    SURFACE_SIDE_STYLE: SurfaceSideStyle,
+    SURFACE_STYLE_FILL_AREA: SurfaceStyleFillArea,
+    SURFACE_STYLE_USAGE: SurfaceStyleUsage,
+    TOROIDAL_SURFACE: ToroidalSurface,
+    TRIMMED_CURVE: TrimmedCurve,
+    UNCERTAINTY_MEASURE_WITH_UNIT: UncertaintyMeasureWithUnit,
+    VECTOR: Vector,
+    VERTEX_LOOP: VertexLoop,
+    VERTEX_POINT: VertexPoint,
+  };
+
+  private printStatus: boolean;
+  private forceParse: boolean;
+  private file: NodeJS.ReadableStream;
+  private filePrefix?: string;
+  private preprocessedFile: PreprocessedFile;
+  private products: ProductInfo[] = [];
+  private relations: RelationInfo[] = [];
+
+  constructor(file: NodeJS.ReadableStream, parserOptions: ParserOptions = {}) {
+    this.printStatus = parserOptions.printStatus ?? false;
+    this.forceParse = parserOptions.force ?? false;
+    this.file = file;
+    this.preprocessedFile = {
+      header: {
+        fileDescription: '',
+        fileName: '',
+        fileSchema: '',
+      },
+      data: {},
+    };
+  }
+
+  async parse(): Promise<AssemblyNode> {
+    await this.preprocessFile();
+    this.parseProductDefinitions(this.preprocessedFile.data.PRODUCT_DEFINITION);
+    this.parseNextAssemblyUsageOccurences(
+      this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE,
+    );
+    const rootAssembly = this.identifyRootAssembly();
+    if (!rootAssembly) throw new Error('Root component could not be found');
+    const result = this.buildStructureObject(rootAssembly);
+    return result;
+  }
+
+  async preprocessFile(): Promise<PreprocessedFile> {
+    function createErrorMessage(message: string): string {
+      return `Line: ${lineCount} | ${message}`;
+    }
+
+    let lineCount = 1;
+    const activeSections: string[] = [];
+    const lines: string[] = [];
+    try {
+      const rl = createInterface({
+        input: this.file,
+        crlfDelay: Infinity,
+      });
+
+      for await (const line of rl) {
+        let current = line as string;
+        if (lines.length > 0 && !lines[lines.length - 1].endsWith(';')) {
+          lines[lines.length - 1] += current;
+        } else {
+          lines.push(current);
+        }
+      }
+    } catch (error) {
+      throw new Error(createErrorMessage(`Error while parsing step file`), {
+        cause: error as Error,
+      } as any);
+    }
+
+    const filePrefix = lines.shift();
+    if (!(filePrefix == 'ISO-10303-21;' || this.forceParse))
+      throw new Error(
+        createErrorMessage(
+          'Unsupported step file provided. First line does not match ISO-10303-21',
+        ),
+      );
+
+    this.filePrefix = filePrefix;
+
+    for (const line of lines) {
+      lineCount += 1;
+
+      if (['HEADER;', 'DATA;'].includes(line)) {
+        activeSections.push(line);
+        continue;
+      }
+
+      if (line == 'ENDSEC;') {
+        activeSections.pop();
+        continue;
+      }
+
+      if (line == 'END-ISO-10303-21;') {
+        break; // File end detected, exit processor loop
+      }
+
+      if (activeSections.length == 0) continue;
+      const currentSection = activeSections[activeSections.length - 1];
+
+      if (currentSection == 'HEADER;') {
+        if (line.includes('FILE_NAME')) {
+          this.preprocessedFile.header.fileName = line;
+          continue;
+        }
+
+        if (line.includes('FILE_SCHEMA')) {
+          this.preprocessedFile.header.fileSchema = line;
+          continue;
+        }
+
+        if (line.includes('FILE_DESCRIPTION')) {
+          this.preprocessedFile.header.fileDescription = line;
+          continue;
+        }
+      } else if (currentSection == 'DATA;') {
+        const match = line.match(/^#([0-9]*)[= ]*([A-Z_0-9]*)([^]*)$/);
+        if (!match) continue;
+        const [, instanceName, entity, parameters] = match;
+
+        if (!this.preprocessedFile.data[entity]) {
+          this.preprocessedFile.data[entity] = new Map();
+        }
+
+        if (this.printStatus && lineCount % 10000 == 0) {
+          const memoryUsage = process.memoryUsage();
+          const cpuUsage = process.cpuUsage();
+
+          // eslint-disable-next-line no-console
+          console.log(`\n${lineCount}/${lines.length}`);
+          // eslint-disable-next-line no-console
+          console.log('\nMemory Usage:');
+          // eslint-disable-next-line no-console
+          console.log(
+            `- RSS (Resident Set Size): ${Math.round(memoryUsage.rss / (1024 * 1024))} MB`,
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            `- Heap Total: ${Math.round(memoryUsage.heapTotal / (1024 * 1024))} MB`,
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            `- Heap Used: ${Math.round(memoryUsage.heapUsed / (1024 * 1024))} MB`,
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            `- External: ${Math.round(memoryUsage.external / (1024 * 1024))} MB`,
+          );
+
+          // eslint-disable-next-line no-console
+          console.log('\nCPU Usage:');
+          // eslint-disable-next-line no-console
+          console.log(`- User CPU Time: ${cpuUsage.user / 1000} ms`);
+          // eslint-disable-next-line no-console
+          console.log(`- System CPU Time: ${cpuUsage.system / 1000} ms`);
+        }
+
+        const targetEntity = this.entities[entity];
+        if (targetEntity) {
+          this.preprocessedFile.data[entity].set(
+            instanceName,
+            new targetEntity(parameters),
+          );
+        } else {
+          if (this.printStatus)
+            // eslint-disable-next-line no-console
+            console.log(`Not Implemented entity: ${entity}`);
+        }
+      }
+    }
+
+    return this.preprocessedFile;
+  }
+
+  parseNextAssemblyUsageOccurences(nextAssemblyUsageOccurences: Map<string, any>): RelationInfo[] {
+    const assemblyRelations: RelationInfo[] = [];
+    nextAssemblyUsageOccurences.forEach((entity: any, id: string) => {
+      const newId = id;
+
+      const container = entity.getRelatingProductDefinition();
+      const contained = entity.getRelatedProductDefinition();
+
+      const assemblyObject: RelationInfo = {
+        id: newId,
+        container: container,
+        contains: contained,
+      };
+      assemblyRelations.push(assemblyObject);
+    });
+
+    this.relations = assemblyRelations;
+    return assemblyRelations;
+  }
+
+  parseProductDefinitions(productDefinitionLines: Map<string, any>): ProductInfo[] {
+    const products: ProductInfo[] = [];
+
+    productDefinitionLines.forEach((entity: any, id: string) => {
+      const newId = id;
+      const name = entity.getId();
+
+      const productObject: ProductInfo = {
+        id: newId,
+        name: fixSpecialChars(name),
+      };
+      products.push(productObject);
+    });
+    this.products = products;
+    return products;
+  }
+
+  identifyRootAssembly(): ProductInfo | undefined {
+    if (this.products.length === 1) {
+      return this.products[0];
+    }
+
+    try {
+      let rootComponent: ProductInfo | undefined;
+      this.products.forEach((product) => {
+        const productIsContainer = this.relations.some(
+          (relation) => relation.container === product.id,
+        );
+
+        const productIsContained = this.relations.some(
+          (relation) => relation.contains === product.id,
+        );
+
+        if (productIsContainer && !productIsContained) {
+          rootComponent = product;
+        }
+      });
+
+      return rootComponent;
+    } catch (error) {
+      throw new Error('Root component could not be found', {
+        cause: error as Error,
+      } as any);
+    }
+  }
+
+  buildStructureObject(rootProduct: ProductInfo): AssemblyNode {
+    const structureObject: AssemblyNode = {
+      id: rootProduct.id,
+      name: rootProduct.name,
+      contains: [],
+    };
+
+    this.relations.forEach((relation) => {
+      if (relation.container === rootProduct.id) {
+        const containedProduct = this.getContainedProduct(relation.contains)!;
+        structureObject.contains.push(
+          this.buildStructureObject(containedProduct),
+        );
+      }
+    });
+
+    return structureObject;
+  }
+
+  isContainer(productId: string): boolean {
+    const isContainer = this.relations.some(
+      (element) => element.container === productId,
+    );
+    return isContainer;
+  }
+
+  getContainedProduct(relationContainsId: string): ProductInfo | undefined {
+    return this.products.find((product) => product.id === relationContainsId);
+  }
+}
+
+export { StepToJsonParser };

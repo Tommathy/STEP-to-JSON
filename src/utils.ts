@@ -2,7 +2,7 @@
  * Fixes German umlauts
  * @param {string} stringToFix The string that will be fixed
  */
-const fixSpecialChars = (stringToFix) => {
+const fixSpecialChars = (stringToFix: string) => {
     let fixedString = stringToFix;
 
     if (stringToFix.includes('\\X\\')) {

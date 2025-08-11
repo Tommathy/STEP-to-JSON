@@ -1,111 +1,74 @@
-class Consumer {
-    constructor(id) {
-        /**
-         * _id is an internal identifier for this consumer to reference from
-         * @type {String}
-         * @private
-         */
+type ConsumerTypeId =
+    (typeof AttributeParser.consumerType)[keyof typeof AttributeParser.consumerType];
+
+// Values that an attribute can resolve to when calling getValue()
+export type AttributeValue = string | number | boolean | null | '$' | '*';
+
+export class Consumer<
+    TValue extends AttributeValue | Consumer<any>[] | undefined =
+        | AttributeValue
+        | Consumer<any>[],
+> {
+    private _id: string;
+    private _match: string;
+    public _contains: Consumer<any>[]; // only non-empty for groups
+    protected _value: TValue | undefined;
+
+    constructor(id: string) {
         this._id = id;
-
-        /**
-         * _match getContains() the string that has been matched
-         * @type {String}
-         * @private
-         */
         this._match = '';
-
-        /**
-         * getContains() is an array that holds child consumers
-         * @type {[Consumer]}
-         * @public
-         */
         this._contains = [];
+        this._value = undefined as TValue | undefined;
     }
 
-    /**
-     * Return the value if value has been set after finish
-     * @returns {any}
-     */
-    getContains() {
+    getContains(): Consumer<any>[] {
         return this._contains;
     }
 
-    /**
-     * Return the value if value has been set after finish
-     * @returns {any}
-     */
-    getValue() {
+    getValue(): TValue | undefined {
         return this._value;
     }
 
-    /**
-     * update internal value variable
-     * @param {any} newValue
-     */
-    setValue(newValue) {
+    setValue(newValue: TValue): void {
         this._value = newValue;
     }
 
-    /**
-     * Add character to the current match
-     * @param {String} char character that should be added to the match
-     */
-    addMatch(char) {
-        this._match += char;
+    addMatch(char: string | undefined): void {
+        if (char) this._match += char;
     }
 
-    /**
-     * Get current matched data
-     * @returns {String}
-     */
-    getMatch() {
+    getMatch(): string {
         return this._match;
     }
 
-    /**
-     * Get unique Id from consumer class
-     * @returns {String}
-     */
-    getId() {
+    getId(): string {
         return this._id;
     }
 
-    /**
-     * Get unique Id from consumer class
-     * @returns {String}
-     */
-    static getId() {
+    static getId(): ConsumerTypeId {
         throw new Error(`Static getId function not implemented"`);
     }
 
-    /**
-     * This function is beeing called, when a new char should be parsed from the parser
-     * @param {AttributeParser} parser parser that holds the content that should be parsed
-     */
-    // eslint-disable-next-line no-unused-vars
-    static consume(parser) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    static consume(_parser: AttributeParser): boolean | void {
         throw new Error(`consume function not implemented"`);
     }
 
-    /**
-     * Does some cleanup, called when finished consuming chars
-     * @returns void
-     */
-    finish() {
+    finish(): void {
         throw new Error('Finish not implemented');
     }
 }
 
-class GroupConsumer extends Consumer {
+class GroupConsumer extends Consumer<Consumer<any>[]> {
     constructor() {
         super(GroupConsumer.getId());
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.GROUP;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == '(') {
             parser.pushToStack(new GroupConsumer());
             parser.next(); // Dispose: (
@@ -115,7 +78,7 @@ class GroupConsumer extends Consumer {
         if (parser.current() == ')') {
             const groupConsumer = parser.removeDataFromStack();
             const currentConsumer = parser.currentStackEntry();
-            if (currentConsumer) {
+            if (currentConsumer && groupConsumer) {
                 currentConsumer.getContains().push(groupConsumer);
             }
             parser.next(); // Dispose: )
@@ -126,27 +89,28 @@ class GroupConsumer extends Consumer {
     }
 }
 
-class UnsetConsumer extends Consumer {
+class UnsetConsumer extends Consumer<'$'> {
     constructor() {
         super(UnsetConsumer.getId());
     }
 
-    finish() {
+    finish(): void {
         // value is still null, because this argument is unset
         this.setValue('$');
         return;
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.UNSET;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == '$') {
             const consumer = new UnsetConsumer();
             consumer.addMatch(parser.next()); // Consume: $
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
             return true;
         }
 
@@ -154,48 +118,49 @@ class UnsetConsumer extends Consumer {
     }
 }
 
-class SubtypeConsumer extends Consumer {
+class SubtypeConsumer extends Consumer<'*'> {
     constructor() {
         super(UnsetConsumer.getId());
     }
 
-    finish() {
+    finish(): void {
         // value is still null, because this argument inherts its data from "somewhere else". its weird
         this.setValue('*');
         return;
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.SUBTYPE;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean | void {
         if (parser.current() == '*') {
             const consumer = new UnsetConsumer();
             consumer.addMatch(parser.next()); // Consume: *
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
-            return;
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
+            return true;
         }
 
         return;
     }
 }
 
-class StringConsumer extends Consumer {
+class StringConsumer extends Consumer<string> {
     constructor() {
         super(StringConsumer.getId());
     }
 
-    finish() {
+    finish(): void {
         this.setValue(this.getMatch());
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.STRING;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == "'") {
             parser.next(); // Dispose: '
             const consumer = new StringConsumer();
@@ -211,7 +176,8 @@ class StringConsumer extends Consumer {
             parser.next(); // Dispose: '
 
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
             return true;
         }
 
@@ -219,30 +185,32 @@ class StringConsumer extends Consumer {
     }
 }
 
-class NumberConsumer extends Consumer {
+class NumberConsumer extends Consumer<number> {
     constructor() {
         super(NumberConsumer.getId());
     }
 
-    finish() {
-        this.setValue(Number.parseFloat(this.getMatch()));
+    finish(): void {
+        const match = this.getMatch();
+        const parsed = parseFloat(match);
+        this.setValue(parsed);
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.NUMBER;
     }
 
-    static consume(parser) {
-        if (/[-0-9]/.test(parser.current())) {
+    static consume(parser: AttributeParser): boolean {
+        if (/[+\-0-9.]/.test(parser.current() ?? '')) {
             const consumer = new NumberConsumer();
-            consumer.addMatch(parser.next()); // Consume first digit
 
-            while (/[-+0-9.E]/.test(parser.current())) {
+            while (/[-+0-9.E]/.test(parser.current() ?? '')) {
                 consumer.addMatch(parser.next()); // Consume: char
             }
 
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
             return true;
         }
 
@@ -250,12 +218,12 @@ class NumberConsumer extends Consumer {
     }
 }
 
-class EnumConsumer extends Consumer {
+class EnumConsumer extends Consumer<boolean | null | string> {
     constructor() {
         super(EnumConsumer.getId());
     }
 
-    finish() {
+    finish(): void {
         switch (this.getMatch()) {
             case 'T':
                 this.setValue(true);
@@ -271,16 +239,16 @@ class EnumConsumer extends Consumer {
         }
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.ENUM;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == '.') {
             const consumer = new EnumConsumer();
             const startingIndex = parser._currentIndex;
             parser.next(); // Dispose: .
-            while (/[a-zA-Z0-9_]/.test(parser.current())) {
+            while (/[a-zA-Z0-9_]/.test(parser.current() ?? '')) {
                 consumer.addMatch(parser.next()); // Consume: char
             }
 
@@ -291,7 +259,8 @@ class EnumConsumer extends Consumer {
             }
 
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
             return true;
         }
 
@@ -299,16 +268,16 @@ class EnumConsumer extends Consumer {
     }
 }
 
-class CommentConsumer extends Consumer {
+class CommentConsumer extends Consumer<undefined> {
     constructor() {
         super(UnsetConsumer.getId());
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.COMMENT;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == '/' && parser.peek() == '*') {
             parser.next(); // Dispose: /
             parser.next(); // Dispose: *
@@ -325,31 +294,32 @@ class CommentConsumer extends Consumer {
     }
 }
 
-class ReferenceConsumer extends Consumer {
+class ReferenceConsumer extends Consumer<string> {
     constructor() {
         super(ReferenceConsumer.getId());
     }
 
-    finish() {
+    finish(): void {
         this.setValue(this.getMatch());
         return;
     }
 
-    static getId() {
+    static getId(): ConsumerTypeId {
         return AttributeParser.consumerType.REFERENCE;
     }
 
-    static consume(parser) {
+    static consume(parser: AttributeParser): boolean {
         if (parser.current() == '#') {
             const consumer = new ReferenceConsumer();
             parser.next(); // Consume: #
 
-            while (/[0-9]/.test(parser.current())) {
+            while (/[0-9]/.test(parser.current() ?? '')) {
                 consumer.addMatch(parser.next()); // Consume: digit
             }
 
             consumer.finish();
-            parser.currentStackEntry().getContains().push(consumer);
+            const current = parser.currentStackEntry();
+            if (current) current.getContains().push(consumer);
             return true;
         }
 
@@ -358,7 +328,12 @@ class ReferenceConsumer extends Consumer {
 }
 
 class AttributeParser {
-    constructor(content) {
+    public _currentIndex: number;
+    private _content: string[];
+    private _stack: Consumer<any>[];
+    private _result: GroupConsumer | null;
+
+    constructor(content: string) {
         this._currentIndex = 0;
         this._content = Array.from(content.replace(';', '').trim());
         this._stack = [];
@@ -375,27 +350,27 @@ class AttributeParser {
         UNSET: 'unset',
         SUBTYPE: 'subtype',
         COMMENT: 'comment',
-    };
+    } as const;
 
-    current() {
+    current(): string | undefined {
         return this._content[this._currentIndex];
     }
 
-    peek(amount = 1) {
+    peek(amount = 1): string | undefined {
         return this._content[this._currentIndex + amount];
     }
 
-    next() {
+    next(): string | undefined {
         const currentChar = this._content[this._currentIndex];
         this._currentIndex += 1;
         return currentChar;
     }
 
-    pushToStack(consumer) {
+    pushToStack(consumer: Consumer<any>): boolean | null {
         if (this._stack.length == 0) {
             if (consumer?.getId() == GroupConsumer.getId()) {
                 this._stack.push(consumer);
-                this._result = consumer;
+                this._result = consumer as GroupConsumer;
 
                 return true;
             }
@@ -408,20 +383,25 @@ class AttributeParser {
         return true;
     }
 
-    currentStackEntry() {
+    currentStackEntry(): Consumer<any> | null {
         if (this._stack.length == 0) return null;
-        return this._stack[this._stack.length - 1];
+        return this._stack[this._stack.length - 1] ?? null;
     }
 
-    removeDataFromStack() {
+    removeDataFromStack(): Consumer<any> | null {
         const currentConsumer = this.currentStackEntry();
-        if (this._stack.length == 0 || currentConsumer?.getId() != GroupConsumer.getId()) return null;
+        if (
+            this._stack.length == 0 ||
+            currentConsumer?.getId() != GroupConsumer.getId()
+        )
+            return null;
 
-        return this._stack.pop();
+        return this._stack.pop() ?? null;
     }
 
-    parse() {
-        if (!GroupConsumer.consume(this)) throw new Error('No group consumer found');
+    parse(): GroupConsumer {
+        if (!GroupConsumer.consume(this))
+            throw new Error('No group consumer found');
 
         while (this.current()) {
             if (GroupConsumer.consume(this)) continue;
@@ -433,15 +413,20 @@ class AttributeParser {
             if (SubtypeConsumer.consume(this)) continue;
             if (CommentConsumer.consume(this)) continue;
 
-            if (!/[,\s\n\r]/.test(this.current())) {
+            if (!/[,\s\n\r]/.test(this.current() ?? '')) {
+                // eslint-disable-next-line no-console
                 console.log(this._content.join(''));
+                // eslint-disable-next-line no-console
                 console.log(`${'~'.repeat(this._currentIndex)}^`);
-                throw new Error(`Failed to parse: ${this.current()} at index ${this._currentIndex}`);
+                throw new Error(
+                    `Failed to parse: ${this.current()} at index ${this._currentIndex}`,
+                );
             }
 
             this.next(); // Dispose: ,
         }
 
+        if (!this._result) throw new Error('No parse result');
         return this._result;
     }
 }
