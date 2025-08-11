@@ -8,13 +8,10 @@
     "type": "module",
     "scripts": {
         "demo": "npm run debug",
-        "debug": "node ./demo/main.js",
+        "debug": "node demo/main.ts",
         "lint": "eslint src test",
         "fix": "npx prettier . --write",
-        "test": "vitest run",
-        "prebuild": "rimraf dist",
-        "build": "rollup -c",
-        "prepublishOnly": "npm run lint && npm run test && npm run build"
+        "test": "vitest run"
     },
     "repository": {
         "type": "git",

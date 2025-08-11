@@ -1,7 +1,7 @@
 import { describe, it, assert } from 'vitest';
-import { ProductDefinition } from './ProductDefinition.js';
-import { Product } from './Product.js';
-import { NextAssemblyUsageOccurrence } from './NextAssemblyUsageOccurrence.js';
+import { ProductDefinition } from './ProductDefinition.ts';
+import { Product } from './Product.ts';
+import { NextAssemblyUsageOccurrence } from './NextAssemblyUsageOccurrence.ts';
 
 describe('Entity getters', () => {
     it('ProductDefinition getters', () => {

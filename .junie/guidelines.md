@@ -35,7 +35,7 @@ Common Tasks
 - Auto‑format: npm run fix
 - Build bundles: npm run build
 - Clean + build: npm run prebuild && npm run build (prebuild runs automatically)
-- Run demo: npm run demo (executes demo/main.js)
+- Run demo: npm run demo (executes demo/main.ts)
 
 Using the Library (Node ESM)
 
