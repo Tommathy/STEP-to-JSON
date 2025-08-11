@@ -34,10 +34,12 @@
         "url": "https://github.com/aljoshakoecher/STEP-to-JSON/issues"
     },
     "homepage": "https://github.com/aljoshakoecher/STEP-to-JSON#readme",
-    "dependencies": {},
     "devDependencies": {
+        "@eslint/js": "^9.33.0",
+        "@types/node": "^24.2.1",
         "@vitest/coverage-v8": "^3.2.4",
         "eslint": "^9.33.0",
+        "globals": "^16.3.0",
         "prettier": "3.4.2",
         "typescript": "^5.9.2",
         "vitest": "^3.2.4"

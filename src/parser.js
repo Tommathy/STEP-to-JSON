@@ -109,7 +109,8 @@ class StepToJsonParser {
         CLOSED_SHELL: ClosedShell,
         COLOUR_RGB: ColourRGB,
         CONICAL_SURFACE: ConicalSurface,
-        CONTEXT_DEPENDENT_SHAPE_REPRESENTATION: ContextDependentShapeRepresentation,
+        CONTEXT_DEPENDENT_SHAPE_REPRESENTATION:
+            ContextDependentShapeRepresentation,
         CURVE_STYLE: CurveStyle,
         CYLINDRICAL_SURFACE: CylindricalSurface,
         DEFINITIONAL_REPRESENTATION: DefinitionalRepresentation,
@@ -127,7 +128,8 @@ class StepToJsonParser {
         ITEM_DEFINED_TRANSFORMATION: ItemDefinedTransformation,
         LINE: Line,
         MANIFOLD_SOLID_BREP: ManifoldSolidBrep,
-        MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION: MechanicalDesignGeometricPresentationRepresentation,
+        MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION:
+            MechanicalDesignGeometricPresentationRepresentation,
         NEXT_ASSEMBLY_USAGE_OCCURRENCE: NextAssemblyUsageOccurrence,
         OPEN_SHELL: OpenShell,
         ORIENTED_EDGE: OrientedEdge,
@@ -188,8 +190,12 @@ class StepToJsonParser {
      */
     async parse() {
         await this.preprocessFile();
-        this.parseProductDefinitions(this.preprocessedFile.data.PRODUCT_DEFINITION);
-        this.parseNextAssemblyUsageOccurences(this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE);
+        this.parseProductDefinitions(
+            this.preprocessedFile.data.PRODUCT_DEFINITION,
+        );
+        this.parseNextAssemblyUsageOccurences(
+            this.preprocessedFile.data.NEXT_ASSEMBLY_USAGE_OCCURRENCE,
+        );
         const rootAssembly = this.identifyRootAssembly();
         const result = this.buildStructureObject(rootAssembly);
         return result;
@@ -225,20 +231,30 @@ class StepToJsonParser {
                 // Each line in input.txt will be successively available here as `line`.
                 let current = line;
                 // Append to the last entry if it doesn't end with ';'
-                if (lines.length > 0 && !lines[lines.length - 1].endsWith(';')) {
+                if (
+                    lines.length > 0 &&
+                    !lines[lines.length - 1].endsWith(';')
+                ) {
                     lines[lines.length - 1] += current;
                 } else {
                     lines.push(current);
                 }
             }
         } catch (error) {
-            throw new Error(createErrorMessage(`Error while parsing step file`), error);
+            throw new Error(
+                createErrorMessage(`Error while parsing step file`),
+                error,
+            );
         }
 
         const filePrefix = lines.shift();
         // this parser is only tested with ISO-10303-21 files
         if (!(filePrefix == 'ISO-10303-21;' || this.forceParse))
-            throw new Error(createErrorMessage('Unsupported step file provided. First line does not match ISO-10303-21'));
+            throw new Error(
+                createErrorMessage(
+                    'Unsupported step file provided. First line does not match ISO-10303-21',
+                ),
+            );
 
         this.filePrefix = filePrefix;
 
@@ -282,7 +298,9 @@ class StepToJsonParser {
             } else if (currentSection == 'DATA;') {
                 // TODO: Check if something else is here more efficient
                 // Replace new line followed by whitespace & match basic parameters
-                const [, instanceName, entity, parameters] = line.match(/^#([0-9]*)[= ]*([A-Z_0-9]*)([^]*)$/);
+                const [, instanceName, entity, parameters] = line.match(
+                    /^#([0-9]*)[= ]*([A-Z_0-9]*)([^]*)$/,
+                );
 
                 if (!this.preprocessedFile.data[entity]) {
                     this.preprocessedFile.data[entity] = new Map();
@@ -294,21 +312,35 @@ class StepToJsonParser {
 
                     console.log(`\n${lineCount}/${lines.length}`);
                     console.log('\nMemory Usage:');
-                    console.log(`- RSS (Resident Set Size): ${Math.round(memoryUsage.rss / (1024 * 1024))} MB`);
-                    console.log(`- Heap Total: ${Math.round(memoryUsage.heapTotal / (1024 * 1024))} MB`);
-                    console.log(`- Heap Used: ${Math.round(memoryUsage.heapUsed / (1024 * 1024))} MB`);
-                    console.log(`- External: ${Math.round(memoryUsage.external / (1024 * 1024))} MB`);
+                    console.log(
+                        `- RSS (Resident Set Size): ${Math.round(memoryUsage.rss / (1024 * 1024))} MB`,
+                    );
+                    console.log(
+                        `- Heap Total: ${Math.round(memoryUsage.heapTotal / (1024 * 1024))} MB`,
+                    );
+                    console.log(
+                        `- Heap Used: ${Math.round(memoryUsage.heapUsed / (1024 * 1024))} MB`,
+                    );
+                    console.log(
+                        `- External: ${Math.round(memoryUsage.external / (1024 * 1024))} MB`,
+                    );
 
                     console.log('\nCPU Usage:');
                     console.log(`- User CPU Time: ${cpuUsage.user / 1000} ms`);
-                    console.log(`- System CPU Time: ${cpuUsage.system / 1000} ms`);
+                    console.log(
+                        `- System CPU Time: ${cpuUsage.system / 1000} ms`,
+                    );
                 }
 
                 const targetEntity = this.entities[entity];
                 if (targetEntity) {
-                    this.preprocessedFile.data[entity].set(instanceName, new targetEntity(parameters));
+                    this.preprocessedFile.data[entity].set(
+                        instanceName,
+                        new targetEntity(parameters),
+                    );
                 } else {
-                    if (this.printStatus) console.log(`Not Implemented entity: ${entity}`);
+                    if (this.printStatus)
+                        console.log(`Not Implemented entity: ${entity}`);
                 }
             }
         }
@@ -377,10 +409,14 @@ class StepToJsonParser {
             let rootComponent;
             this.products.forEach((product) => {
                 // Look for a relation where product is the container
-                const productIsContainer = this.relations.some((relation) => relation.container === product.id);
+                const productIsContainer = this.relations.some(
+                    (relation) => relation.container === product.id,
+                );
 
                 // Look for a relation where product is contained
-                const productIsContained = this.relations.some((relation) => relation.contains === product.id);
+                const productIsContained = this.relations.some(
+                    (relation) => relation.contains === product.id,
+                );
 
                 // Root assembly acts a container, but is not contained in any other product
                 if (productIsContainer && !productIsContained) {
@@ -390,7 +426,9 @@ class StepToJsonParser {
 
             return rootComponent;
         } catch (error) {
-            throw new Error('Root component could not be found');
+            throw new Error('Root component could not be found', {
+                cause: error,
+            });
         }
     }
 
@@ -408,8 +446,12 @@ class StepToJsonParser {
 
         this.relations.forEach((relation) => {
             if (relation.container === rootProduct.id) {
-                const containedProduct = this.getContainedProduct(relation.contains);
-                structureObject.contains.push(this.buildStructureObject(containedProduct));
+                const containedProduct = this.getContainedProduct(
+                    relation.contains,
+                );
+                structureObject.contains.push(
+                    this.buildStructureObject(containedProduct),
+                );
             }
         });
 
@@ -423,7 +465,9 @@ class StepToJsonParser {
      * @returns
      */
     isContainer(productId) {
-        const isContainer = this.relations.some((element) => element.container === productId);
+        const isContainer = this.relations.some(
+            (element) => element.container === productId,
+        );
         return isContainer;
     }
 
@@ -433,7 +477,9 @@ class StepToJsonParser {
      * @param {string} relationContainsId 'contains-id' of the relation
      */
     getContainedProduct(relationContainsId) {
-        return this.products.find((product) => product.id === relationContainsId);
+        return this.products.find(
+            (product) => product.id === relationContainsId,
+        );
     }
 }
 
