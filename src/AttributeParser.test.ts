@@ -3,7 +3,7 @@ import { preferredSurfaceCurveRepresentation, siPrefix } from './enums.js';
 import { AttributeParser } from './AttributeParser.js';
 import { assert, describe, it } from 'vitest';
 
-function checkAttributeType(attributesString, expectedResult) {
+function checkAttributeType(attributesString: string, expectedResult) {
     it('Parse Attribute test', () => {
         const attributes = new AttributeParser(attributesString);
         const contains = attributes.parse().getContains();
@@ -16,7 +16,7 @@ function checkAttributeType(attributesString, expectedResult) {
     });
 }
 
-function parseValues(str) {
+function parseValues(str: string) {
     const res = new AttributeParser(str).parse();
     return res.getContains().map((c) => c.getValue());
 }

@@ -8,7 +8,7 @@
     "type": "module",
     "scripts": {
         "demo": "npm run debug",
-        "debug": "node demo/main.ts",
+        "debug": "node --max-old-space-size=16384 --import=tsx ./demo/main.ts",
         "lint": "eslint src test",
         "fix": "npx prettier . --write",
         "test": "vitest run"
@@ -38,6 +38,7 @@
         "eslint": "^9.33.0",
         "globals": "^16.3.0",
         "prettier": "3.4.2",
+        "tsx": "^4.20.3",
         "typescript": "^5.9.2",
         "vitest": "^3.2.4"
     }

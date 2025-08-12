@@ -1,35 +1,38 @@
-import { dirname, join } from 'path';
-import { statSync, writeFileSync, createReadStream } from 'fs';
+import { dirname, join, parse } from 'path';
+import { statSync, writeFileSync, createReadStream, existsSync } from 'fs';
 
-import { StepToJsonParser } from '../src/parser.js';
+import { StepToJsonParser } from '../src/parser.ts';
 import { fileURLToPath } from 'url';
+import { mkdirSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = join(dirname(__filename), '../test/data');
+const jsonDir = join(__dirname, 'json');
 
 const files = [
     {
-        stdFilePath: join(__dirname, '../test/data', '400115.STEP'),
-        jsonFilePath: join(__dirname, '../test/data', '400115.json'),
+        stdFilePath: join(__dirname, 'CityQ_Passagier_05.03.25.STEP'),
     },
 ];
 
 for (const file of files) {
     const stdFilePath = file.stdFilePath;
-    const jsonFilePath = file.jsonFilePath;
+    const jsonFilePath = join(jsonDir, parse(file.stdFilePath).name + '.json');
 
     const stepFile = createReadStream(stdFilePath, { encoding: 'utf8' });
     const stats = statSync(stdFilePath);
     console.log(`File path: ${stdFilePath}`);
     console.log(`File size: ${Math.floor(stats.size / 1024 / 1024)} MB`);
 
-    console.time('preprocessor');
     const parser = new StepToJsonParser(stepFile);
-    console.timeEnd('preprocessor');
 
     console.time('parse');
     const parsedData = await parser.parse();
     console.timeEnd('parse');
+
+    if (!existsSync(jsonDir)) {
+        mkdirSync(jsonDir);
+    }
 
     writeFileSync(jsonFilePath, JSON.stringify(parsedData, null, 2));
 }

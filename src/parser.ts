@@ -200,6 +200,7 @@ class StepToJsonParser {
     }
 
     async preprocessFile(): Promise<PreprocessedFile> {
+        console.time('preprocessor');
         function createErrorMessage(message: string): string {
             return `Line: ${lineCount} | ${message}`;
         }
@@ -358,6 +359,7 @@ class StepToJsonParser {
             }
         }
 
+        console.timeEnd('preprocessor');
         return this.preprocessedFile;
     }
 
