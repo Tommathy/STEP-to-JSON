@@ -11,7 +11,7 @@ const jsonDir = join(__dirname, 'json');
 
 const files = [
     {
-        stdFilePath: join(__dirname, 'CityQ_Passagier_05.03.25.STEP'),
+        stdFilePath: join(__dirname, '01037894_Rev 1.stp'),
     },
 ];
 

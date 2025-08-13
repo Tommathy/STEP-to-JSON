@@ -89,7 +89,7 @@ type EntitiesMap = Record<string, EntityCtor>;
 
 export type PreprocessedFile = {
     header: StpHeader;
-    data: Record<string, Map<string, any>>;
+    data: Record<keyof EntitiesMap, Map<string, any>>;
 };
 
 class StepToJsonParser {
@@ -164,15 +164,14 @@ class StepToJsonParser {
         VERTEX_POINT: VertexPoint,
     };
 
-    private printStatus: boolean;
-    private forceParse: boolean;
-    private file: ReadStream;
-    private preprocessedFile: PreprocessedFile;
+    private readonly forceParse: boolean;
+    private readonly file: ReadStream;
+    private readonly preprocessedFile: PreprocessedFile;
     private products: ProductInfo[] = [];
     private relations: RelationInfo[] = [];
+    private lines: string[] = [];
 
     constructor(file: ReadStream, parserOptions: ParserOptions = {}) {
-        this.printStatus = parserOptions.printStatus ?? false;
         this.forceParse = parserOptions.force ?? false;
         this.file = file;
         this.preprocessedFile = {
@@ -195,8 +194,8 @@ class StepToJsonParser {
         );
         const rootAssembly = this.identifyRootAssembly();
         if (!rootAssembly) throw new Error('Root component could not be found');
-        const result = this.buildStructureObject(rootAssembly);
-        return result;
+
+        return this.buildStructureObject(rootAssembly);
     }
 
     async preprocessFile(): Promise<PreprocessedFile> {
@@ -207,34 +206,47 @@ class StepToJsonParser {
 
         let lineCount = 1;
         const activeSections: string[] = [];
-        const lines: string[] = [];
         try {
             const rl = createInterface({
                 input: this.file,
                 crlfDelay: Infinity,
             });
 
+            // More efficient line processing - avoid unnecessary string operations
+            let currentLine = '';
             for await (const line of rl) {
-                let current = line as string;
-                if (
-                    lines.length > 0 &&
-                    !lines[lines.length - 1]?.endsWith(';')
-                ) {
-                    lines[lines.length - 1] += current;
+                const trimmedLine = line.trimEnd();
+
+                if (trimmedLine.endsWith(';')) {
+                    // If we have a complete line, add it to our collection
+                    if (currentLine) {
+                        this.lines.push(currentLine + trimmedLine);
+                        currentLine = '';
+                    } else {
+                        this.lines.push(trimmedLine);
+                    }
                 } else {
-                    lines.push(current);
+                    // Accumulate incomplete lines
+                    if (currentLine) {
+                        currentLine += trimmedLine;
+                    } else {
+                        currentLine = trimmedLine;
+                    }
                 }
+            }
+
+            // Handle any remaining accumulated line
+            if (currentLine) {
+                this.lines.push(currentLine);
             }
         } catch (error) {
             throw new Error(
                 createErrorMessage(`Error while parsing step file`),
-                {
-                    cause: error as Error,
-                } as any,
+                { cause: error as Error },
             );
         }
 
-        const filePrefix = lines.shift();
+        const filePrefix = this.lines.shift();
         if (!filePrefix || !(filePrefix == 'ISO-10303-21;' || this.forceParse))
             throw new Error(
                 createErrorMessage(
@@ -242,7 +254,15 @@ class StepToJsonParser {
                 ),
             );
 
-        for (const line of lines) {
+        // Pre-initialize all entity types to avoid type issues
+        const entityTypes = Object.keys(this.entities);
+        for (const entityType of entityTypes) {
+            if (!this.preprocessedFile.data[entityType]) {
+                this.preprocessedFile.data[entityType] = new Map();
+            }
+        }
+
+        for (const line of this.lines) {
             lineCount += 1;
 
             if (['HEADER;', 'DATA;'].includes(line)) {
@@ -282,14 +302,6 @@ class StepToJsonParser {
                 if (!match) continue;
                 const [, instanceName, entity, parameters] = match;
 
-                // if (!entity) {
-                //     throw new Error(
-                //         createErrorMessage(
-                //             `Entity name not found in line: ${line}`,
-                //         ),
-                //     );
-                // }
-
                 if (!parameters) {
                     throw new Error(
                         createErrorMessage(
@@ -306,55 +318,18 @@ class StepToJsonParser {
                     );
                 }
 
-                if (!this.preprocessedFile.data[entity]) {
-                    this.preprocessedFile.data[entity] = new Map();
+                // Type-safe entity handling
+                const entityType = entity as keyof EntitiesMap;
+                if (this.preprocessedFile.data[entityType] === undefined) {
+                    this.preprocessedFile.data[entityType] = new Map();
                 }
 
-                if (this.printStatus && lineCount % 10000 == 0) {
-                    const memoryUsage = process.memoryUsage();
-                    const cpuUsage = process.cpuUsage();
-
-                    // eslint-disable-next-line no-console
-                    console.log(`\n${lineCount}/${lines.length}`);
-                    // eslint-disable-next-line no-console
-                    console.log('\nMemory Usage:');
-                    // eslint-disable-next-line no-console
-                    console.log(
-                        `- RSS (Resident Set Size): ${Math.round(memoryUsage.rss / (1024 * 1024))} MB`,
-                    );
-                    // eslint-disable-next-line no-console
-                    console.log(
-                        `- Heap Total: ${Math.round(memoryUsage.heapTotal / (1024 * 1024))} MB`,
-                    );
-                    // eslint-disable-next-line no-console
-                    console.log(
-                        `- Heap Used: ${Math.round(memoryUsage.heapUsed / (1024 * 1024))} MB`,
-                    );
-                    // eslint-disable-next-line no-console
-                    console.log(
-                        `- External: ${Math.round(memoryUsage.external / (1024 * 1024))} MB`,
-                    );
-
-                    // eslint-disable-next-line no-console
-                    console.log('\nCPU Usage:');
-                    // eslint-disable-next-line no-console
-                    console.log(`- User CPU Time: ${cpuUsage.user / 1000} ms`);
-                    // eslint-disable-next-line no-console
-                    console.log(
-                        `- System CPU Time: ${cpuUsage.system / 1000} ms`,
-                    );
-                }
-
-                const targetEntity = this.entities[entity];
+                const targetEntity = this.entities[entityType];
                 if (targetEntity) {
-                    this.preprocessedFile.data[entity].set(
+                    this.preprocessedFile.data[entityType].set(
                         instanceName,
                         new targetEntity(parameters),
                     );
-                } else {
-                    if (this.printStatus)
-                        // eslint-disable-next-line no-console
-                        console.log(`Not Implemented entity: ${entity}`);
                 }
             }
         }
@@ -390,16 +365,18 @@ class StepToJsonParser {
     ): ProductInfo[] {
         const products: ProductInfo[] = [];
 
-        productDefinitionLines.forEach((entity: any, id: string) => {
-            const newId = id;
-            const name = entity.getId();
+        productDefinitionLines.forEach(
+            (entity: ProductDefinition, id: string) => {
+                const newId = id;
+                const name = entity.getId();
 
-            const productObject: ProductInfo = {
-                id: newId,
-                name: fixSpecialChars(name),
-            };
-            products.push(productObject);
-        });
+                const productObject: ProductInfo = {
+                    id: newId,
+                    name: fixSpecialChars(name),
+                };
+                products.push(productObject);
+            },
+        );
         this.products = products;
         return products;
     }
@@ -409,54 +386,40 @@ class StepToJsonParser {
             return this.products[0];
         }
 
-        try {
-            let rootComponent: ProductInfo | undefined;
-            this.products.forEach((product) => {
-                const productIsContainer = this.relations.some(
-                    (relation) => relation.container === product.id,
-                );
-
-                const productIsContained = this.relations.some(
-                    (relation) => relation.contains === product.id,
-                );
-
-                if (productIsContainer && !productIsContained) {
-                    rootComponent = product;
-                }
-            });
-
-            return rootComponent;
-        } catch (error) {
-            throw new Error('Root component could not be found', {
-                cause: error as Error,
-            } as any);
-        }
+        return this.products.find(
+            (product) =>
+                this.isContainer(product.id) && !this.isContained(product.id),
+        );
     }
 
     buildStructureObject(rootProduct: ProductInfo): AssemblyNode {
-        const structureObject: AssemblyNode = {
-            id: rootProduct.id,
-            name: rootProduct.name,
-            contains: [],
+        // Introduce local variables for clarity and to avoid repeated property access
+        const { id: rootId, name: rootName } = rootProduct;
+
+        // Build children in a clear, side-effect-free way; avoid non-null assertions with a type guard
+        const contains: AssemblyNode[] = this.relations
+            .filter((relation) => relation.container === rootId)
+            .map((relation) => this.getContainedProduct(relation.contains))
+            .filter((product): product is ProductInfo => Boolean(product))
+            .map((product) => this.buildStructureObject(product));
+
+        // Construct the node using concise property names
+        return {
+            id: rootId,
+            name: rootName,
+            contains,
         };
-
-        this.relations.forEach((relation) => {
-            if (relation.container === rootProduct.id) {
-                const containedProduct = this.getContainedProduct(
-                    relation.contains,
-                )!;
-                structureObject.contains.push(
-                    this.buildStructureObject(containedProduct),
-                );
-            }
-        });
-
-        return structureObject;
     }
 
     isContainer(productId: string): boolean {
         return this.relations.some(
             (element) => element.container === productId,
+        );
+    }
+
+    isContained(productId: string): boolean {
+        return this.relations.some(
+            (relation) => relation.contains === productId,
         );
     }
 
